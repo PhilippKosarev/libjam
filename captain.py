@@ -9,8 +9,8 @@ clipboard = Clipboard()
 class Captain:
 
   # Returns a generated a help page based on provided inputs
-  def generate_help(self, app, description, commands, options):
-    offset = 2; offset_string = "".ljust(offset)
+  def generate_help(self, app, description, commands, options=None):
+    offset = 2; offset_string = ' ' * offset
     commands_list = []
     for command in commands:
       command_desc = commands.get(command).get('description')
@@ -19,23 +19,33 @@ class Captain:
     commands_list.append("help")
     commands_list.append("- Prints this page")
     commands_string = typewriter.list_to_columns(commands_list, 2, offset)
-    options_list = []
-    for option in options:
-      option_desc = options.get(option).get('description')
-      long = ', --'.join(options.get(option).get('long'))
-      short = ', -'.join(options.get(option).get('short'))
-      options_list.append(f"-{short}, --{long}")
-      options_list.append(f"- {option_desc}")
-    options_string = typewriter.list_to_columns(options_list, 2, offset)
-    help = f'''{typewriter.bolden('Description:')}
-{offset_string}{description}
-{typewriter.bolden('Synopsis:')}
-{offset_string}{app} [OPTIONS] [COMMAND]
-{typewriter.bolden('Commands:')}
-{commands_string.rstrip()}
-{typewriter.bolden('Options:')}
-{options_string.rstrip()}'''
-    return help
+    if options is not None:
+      options_list = []
+      for option in options:
+        option_desc = options.get(option).get('description')
+        long = ', --'.join(options.get(option).get('long'))
+        short = ', -'.join(options.get(option).get('short'))
+        options_list.append(f"-{short}, --{long}")
+        options_list.append(f"- {option_desc}")
+      options_string = typewriter.list_to_columns(options_list, 2, offset)
+
+    # Creating the help string
+    help_string = ''
+    # Adding description
+    help_string += f"{typewriter.bolden('Description:')}\n"
+    help_string += f"{offset_string}{description}\n"
+    # Adding synopsys
+    help_string += f"{typewriter.bolden('Synopsis:')}\n"
+    help_string += f"{offset_string}{app} [OPTIONS] [COMMAND]\n"
+    # Adding commands
+    help_string += f"{typewriter.bolden('Commands:')}\n"
+    help_string += commands_string.rstrip()
+    # Adding options
+    if options is not None:
+      help_string += f"\n{typewriter.bolden('Options:')}\n"
+      help_string += options_string.rstrip()
+
+    return help_string
 
 
   # Interprets input arguments
