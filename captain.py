@@ -9,7 +9,7 @@ clipboard = Clipboard()
 class Captain:
 
   # Returns a generated a help page based on provided inputs
-  def generate_help(self, app, description, commands, options=None):
+  def generate_help(self, app: str, description: str, commands: dict, options: dict = None):
     offset = 2; offset_string = ' ' * offset
     commands_list = []
     for command in commands:
@@ -49,7 +49,7 @@ class Captain:
 
 
   # Interprets input arguments
-  def interpret(self, app, help, commands, arguments, options):
+  def interpret(self, app: str, help: str, commands: dict, arguments: list, options: dict = None):
     # Class vars
     self.command = None
     self.function = None
@@ -58,43 +58,43 @@ class Captain:
     self.command_args = []
 
     # Creating option bools
-    self.option_values = {}
-    for option in options:
-      name = options.get(option).get('option')
-      self.option_values[name] = False
+    if options is not None:
+      for option in options:
+        option = options.get(option).get('option')
+        options[option]['enabled'] = False
 
     # Parsing arguments
     for argument in arguments:
-      if argument.startswith("-"):
-        self.arg_found = False
-        # Long options
-        if argument.startswith("--"):
-          argument = argument.removeprefix("--")
-          for option in options:
-            strings = options.get(option).get('long')
-            if clipboard.is_string_in_list(strings, argument):
-              option_dict = options.get(option).get('option')
-              option_value = self.option_values[option_dict] = True
-              self.arg_found = True
-          if self.arg_found is False:
-            print(f"Option '{argument}' unrecognized. Try {app} help")
-            sys.exit(-1)
+      if options is not None:
+        if argument.startswith("-"):
+          self.arg_found = False
 
-        # Short options
-        else:
-          argument = argument.removeprefix("-")
-          arguments = list(argument)
-          for argument in arguments:
-            command_found = False
+          # Long options
+          if argument.startswith("--"):
+            argument = argument.removeprefix("--")
             for option in options:
-              strings = options.get(option).get('short')
+              strings = options.get(option).get('long')
               if clipboard.is_string_in_list(strings, argument):
-                option_dict = options.get(option).get('option')
-                option_value = self.option_values[option_dict] = True
-                command_found = True
-          if command_found is False:
-            print(f"Option '{argument}' unrecognized. Try {app} help")
-            sys.exit(-1)
+                options[argument]['enabled'] = True
+                self.arg_found = True
+            if self.arg_found is False:
+              print(f"Option '{argument}' unrecognized. Try {app} help")
+              sys.exit(-1)
+
+          # Short options
+          else:
+            argument = argument.removeprefix("-")
+            arguments = list(argument)
+            for argument in arguments:
+              command_found = False
+              for option in options:
+                strings = options.get(option).get('short')
+                if clipboard.is_string_in_list(strings, argument):
+                  options[argument]['enabled'] = True
+                  command_found = True
+            if command_found is False:
+              print(f"Option '{argument}' unrecognized. Try {app} help")
+              sys.exit(-1)
 
       # Commands
       else:
@@ -143,4 +143,4 @@ class Captain:
     function = commands.get(self.command).get('function')
     function = function(*self.command_args)
 
-    return {'function': function, 'options': self.option_values}
+    return {'function': function, 'options': options}
