@@ -7,13 +7,9 @@ clipboard = Clipboard()
 
 # Processes command line arguments
 class Captain:
-  def __init__(self, app, description, commands, options):
-    # Class vars
-    self.app = app
-    self.commands = commands
-    self.options = options
 
-    # Auto generating a help page
+  # Returns a generated a help page based on provided inputs
+  def generate_help(self, app, description, commands, options):
     offset = 2; offset_string = "".ljust(offset)
     commands_list = []
     for command in commands:
@@ -31,40 +27,32 @@ class Captain:
       options_list.append(f"-{short}, --{long}")
       options_list.append(f"- {option_desc}")
     options_string = typewriter.list_to_columns(options_list, 2, offset)
-    self.help = f'''{typewriter.bolden('Description:')}
+    help = f'''{typewriter.bolden('Description:')}
 {offset_string}{description}
 {typewriter.bolden('Synopsis:')}
-{offset_string}{self.app} [OPTIONS] [COMMAND]
+{offset_string}{app} [OPTIONS] [COMMAND]
 {typewriter.bolden('Commands:')}
 {commands_string.rstrip()}
 {typewriter.bolden('Options:')}
 {options_string.rstrip()}'''
+    return help
 
-  # Returns the stored `help` string
-  def get_help(self):
-    return self.help
 
-  # Sets the `help` string
-  def set_help(self, help: str):
-    self.help = help
-
-  # Prints the `help` string
-  def print_help(self):
-    print(self.help)
-
-  # Interpreting input arguments
-  def interpret(self, arguments):
+  # Interprets input arguments
+  def interpret(self, app, help, commands, arguments, options):
     # Class vars
     self.command = None
     self.function = None
     self.arbitrary_args = False
-    self.requires_args = False
+    self.required_args = 0
     self.command_args = []
+
     # Creating option bools
     self.option_values = {}
-    for option in self.options:
-      name = self.options.get(option).get('option')
+    for option in options:
+      name = options.get(option).get('option')
       self.option_values[name] = False
+
     # Parsing arguments
     for argument in arguments:
       if argument.startswith("-"):
@@ -72,37 +60,39 @@ class Captain:
         # Long options
         if argument.startswith("--"):
           argument = argument.removeprefix("--")
-          for option in self.options:
-            strings = self.options.get(option).get('long')
+          for option in options:
+            strings = options.get(option).get('long')
             if clipboard.is_string_in_list(strings, argument):
-              option_dict = self.options.get(option).get('option')
+              option_dict = options.get(option).get('option')
               option_value = self.option_values[option_dict] = True
               self.arg_found = True
           if self.arg_found is False:
-            print(f"Option '{argument}' unrecognized. Try {self.app} help")
+            print(f"Option '{argument}' unrecognized. Try {app} help")
             sys.exit(-1)
+
         # Short options
         else:
           argument = argument.removeprefix("-")
           arguments = list(argument)
           for argument in arguments:
             command_found = False
-            for option in self.options:
-              strings = self.options.get(option).get('short')
+            for option in options:
+              strings = options.get(option).get('short')
               if clipboard.is_string_in_list(strings, argument):
-                option_dict = self.options.get(option).get('option')
+                option_dict = options.get(option).get('option')
                 option_value = self.option_values[option_dict] = True
                 command_found = True
           if command_found is False:
-            print(f"Option '{argument}' unrecognized. Try {self.app} help")
+            print(f"Option '{argument}' unrecognized. Try {app} help")
             sys.exit(-1)
+
+      # Commands
       else:
-        # Commands
         if self.command is None:
-          for command in self.commands:
+          for command in commands:
             if command == argument:
               self.command = command
-              command_function = self.commands.get(command).get('function')
+              command_function = commands.get(command).get('function')
               command_args = inspect.signature(command_function)
               command_args = command_args.format().replace('(', '').replace(')', '').replace(' ', '')
               command_args = command_args.split(',')
@@ -113,11 +103,12 @@ class Captain:
                 command_args = []
               self.required_args = len(command_args)
             elif argument == 'help':
-              self.print_help()
+              print(help)
               sys.exit(0)
           if self.command is None:
-            print(f"Command '{argument}' unrecognized. Try {self.app} help")
+            print(f"Command '{argument}' unrecognized. Try {app} help")
             sys.exit(-1)
+
         # Command arguments
         else:
           if self.arbitrary_args is False:
@@ -133,19 +124,13 @@ class Captain:
     if self.arbitrary_args is False and self.required_args > len(self.command_args):
       print(f"Command '{self.command}' requires {self.required_args} arguments.")
       sys.exit(-1)
+
     # Checking if command is specified
     if self.command is None:
-        print(f"No command specified. Try {self.app} help")
+        print(f"No command specified. Try {app} help")
         sys.exit(0)
 
-
-  # Returns the `option_values` dict
-  def get_option_values(self):
-    return self.option_values
-
-
-  # Returns the `function` string
-  def get_function(self):
-    function = self.commands.get(self.command).get('function')
+    function = commands.get(self.command).get('function')
     function = function(*self.command_args)
-    return function
+
+    return {'function': function, 'options': self.option_values}
