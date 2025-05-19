@@ -16,5 +16,8 @@ responsible for transforming and printing text
 ### Clipboard
 responsible for working with lists
 
+### Notebook
+responsible for configuration
+
 ### Flashcard
 responsible for getting user input from the command line

@@ -5,14 +5,15 @@ from .drawer import Drawer
 # Jam classes
 drawer = Drawer()
 
-# Pre-requisites
-script_folder = os.path.dirname(os.path.realpath(__file__))
-script_folder = drawer.get_parent(script_folder)
-config_template_file = f"{script_folder}/config.toml.in"
-config_template = open(config_template_file, 'r').read()
-
 # Deals with configs and reading/writing files
 class Notebook:
+
+  def __init__(self):
+    # Pre-requisites
+    script_folder = os.path.dirname(os.path.realpath(__file__))
+    script_folder = drawer.get_parent(script_folder)
+    config_template_file = f"{script_folder}/config.toml.in"
+    self.config_template = open(config_template_file, 'r').read()
 
   # Checking if config exists, and creating one if it does not
   def check_config(self, config_file: str):
