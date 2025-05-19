@@ -51,7 +51,7 @@ class Captain:
   # Interprets input arguments
   def interpret(self, app: str, help: str, commands: dict, arguments: list, options: dict = None):
     # Class vars
-    self.command = None
+    chosen_command = None
     self.function = None
     self.arbitrary_args = False
     self.required_args = 0
@@ -60,13 +60,11 @@ class Captain:
     # Creating option bools
     if options is not None:
       for option in options:
-        option = options.get(option).get('option')
         options[option]['enabled'] = False
-
     # Parsing arguments
     for argument in arguments:
-      if options is not None:
-        if argument.startswith("-"):
+      if argument.startswith("-"):
+        if options is not None:
           self.arg_found = False
 
           # Long options
@@ -75,7 +73,7 @@ class Captain:
             for option in options:
               strings = options.get(option).get('long')
               if clipboard.is_string_in_list(strings, argument):
-                options[argument]['enabled'] = True
+                options[option]['enabled'] = True
                 self.arg_found = True
             if self.arg_found is False:
               print(f"Option '{argument}' unrecognized. Try {app} help")
@@ -90,7 +88,7 @@ class Captain:
               for option in options:
                 strings = options.get(option).get('short')
                 if clipboard.is_string_in_list(strings, argument):
-                  options[argument]['enabled'] = True
+                  options[option]['enabled'] = True
                   command_found = True
             if command_found is False:
               print(f"Option '{argument}' unrecognized. Try {app} help")
@@ -98,49 +96,53 @@ class Captain:
 
       # Commands
       else:
-        if self.command is None:
-          for command in commands:
-            if command == argument:
-              self.command = command
-              command_function = commands.get(command).get('function')
-              command_args = inspect.signature(command_function)
-              command_args = command_args.format().replace('(', '').replace(')', '').replace(' ', '')
-              command_args = command_args.split(',')
-              if clipboard.is_string_in_list(command_args, '*args'):
-                command_args.remove('*args')
-                self.arbitrary_args = True
-              if command_args == ['']:
-                command_args = []
-              self.required_args = len(command_args)
-            elif argument == 'help':
-              print(help)
-              sys.exit(0)
-          if self.command is None:
-            print(f"Command '{argument}' unrecognized. Try {app} help")
-            sys.exit(-1)
+        if chosen_command is None:
+          if clipboard.is_string_in_list(commands, argument):
+            chosen_command = argument
+            command_function = commands.get(chosen_command).get('function')
+            command_args = inspect.signature(command_function)
+            command_args = command_args.format().replace('(', '').replace(')', '').replace(' ', '')
+            command_args = command_args.split(',')
+            if clipboard.is_string_in_list(command_args, '*args'):
+              command_args.remove('*args')
+              self.arbitrary_args = True
+            if command_args == ['']:
+              command_args = []
+            self.required_args = len(command_args)
+            continue
+          elif argument == 'help':
+            print(help)
+            sys.exit(0)
+        if chosen_command is None:
+          print(f"Command '{argument}' unrecognized. Try {app} help")
+          sys.exit(-1)
 
         # Command arguments
         else:
           if self.arbitrary_args is False:
             if self.required_args == 0:
-              print(f"Command '{self.command}' does not take arguments.")
+              print(f"Command '{chosen_command}' does not take arguments.")
               sys.exit(-1)
             elif len(self.command_args) >= self.required_args:
               s = ''
               if self.required_args > 1: s = 's'
-              print(f"Command '{self.command}' requires only {self.required_args} argument{s}.")
+              print(f"Command '{chosen_command}' requires only {self.required_args} argument{s}.")
               sys.exit(-1)
           self.command_args.append(argument)
     if self.arbitrary_args is False and self.required_args > len(self.command_args):
-      print(f"Command '{self.command}' requires {self.required_args} arguments.")
+      print(f"Command '{chosen_command}' requires {self.required_args} arguments.")
       sys.exit(-1)
 
     # Checking if command is specified
-    if self.command is None:
+    if chosen_command is None:
         print(f"No command specified. Try {app} help")
         sys.exit(0)
 
-    function = commands.get(self.command).get('function')
-    function = function(*self.command_args)
+    function = commands.get(chosen_command).get('function')
+    function_name = function.__name__
+    function_params = ''
+    for item in self.command_args:
+      function_params += f"'{item}', "
+    function = f"{function_name}({function_params})"
 
     return {'function': function, 'options': options}
