@@ -111,14 +111,21 @@ class Drawer:
     return outpath(folders)
 
 
+  # Renames a given file in a given path
+  def rename(self, path: str, old_file: str, new_file: str):
+    path = realpath(path)
+    os.rename(f"{path}/{old_file}", f"{path}/{new_file}")
+    return 0
+
+
   # Creates a new folder
-  def make_folder(self, path):
+  def make_folder(self, path: str):
     path = realpath(path)
     path = os.mkdir(path)
     return outpath(path)
 
   # Creates a new file
-  def make_file(self, path):
+  def make_file(self, path: str):
     path = realpath(path)
     new = open(path, 'w')
     new.close()
