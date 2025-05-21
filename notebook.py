@@ -1,5 +1,5 @@
 # Imports
-import os, tomllib
+import os, tomllib, configparser
 from .drawer import Drawer
 
 # Jam classes
@@ -29,7 +29,7 @@ class Notebook:
 
   # parsing a toml config
   def read_toml(self, config_file: str):
-    os.path.normpath(config_file)
+    config_file = os.path.normpath(config_file)
     # Parsing config
     data = open(config_file, 'r').read()
     try:
@@ -45,3 +45,18 @@ class Notebook:
       print(f"Contents of '{config_file}':")
       print(data)
       return None
+
+  # Reads ini file and returns its contents in the form of a dict
+  def read_ini(self, ini_file: str):
+    ini_file = os.path.normpath(ini_file)
+    parser = configparser.ConfigParser()
+    parser.read(ini_file)
+    sections = parser.sections()
+    data = {}
+    for section in sections:
+      keys = {}
+      for key in parser[section]:
+        value = parser[section][key]
+        keys[key] = value
+      data[section] = keys
+    return data
