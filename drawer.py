@@ -112,8 +112,8 @@ class Drawer:
 
 
   # Renames a given file in a given path
-  def rename(self, path: str, old_file: str, new_file: str):
-    path = realpath(path)
+  def rename(self, folder: str, old_file: str, new_file: str):
+    folder = realpath(folder)
     os.rename(f"{path}/{old_file}", f"{path}/{new_file}")
     return 0
 

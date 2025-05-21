@@ -12,11 +12,11 @@ class Notebook:
     # Pre-requisites
     script_folder = os.path.dirname(os.path.realpath(__file__))
     script_folder = drawer.get_parent(script_folder)
-    config_template_file = f"{script_folder}/config.toml.in"
-    self.config_template = open(config_template_file, 'r').read()
+    self.config_template_file = f"{script_folder}/config.toml.in"
 
   # Checking if config exists, and creating one if it does not
   def check_config(self, config_file: str):
+    config_template = open(self.config_template_file, 'r').read()
     config_folder = drawer.get_parent(config_file)
     if drawer.is_folder(config_folder) is False:
       drawer.make_folder(config_folder)
