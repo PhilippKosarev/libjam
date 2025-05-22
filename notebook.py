@@ -74,5 +74,11 @@ class Notebook:
       return None
     ini_file = os.path.normpath(ini_file)
     parser = configparser.ConfigParser()
+    for section in contents:
+      for var_name in contents.get(section):
+        value = contents.get(section).get(var_name)
+        if (section in parser) == False:
+          parser[section] = {}
+        parser[section][var_name] = value
     with open(ini_file, 'w') as file:
       parser.write(file)
