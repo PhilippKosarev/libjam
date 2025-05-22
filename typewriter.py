@@ -57,6 +57,7 @@ class Typewriter:
     if columns is None:
       terminal_width = shutil.get_terminal_size()[0] - 1
       columns = int(terminal_width / (column_width + offset))
+      if columns < 1: columns = 1
     output = ""
     iteration = 1
     for item in text_list:
