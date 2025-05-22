@@ -55,7 +55,10 @@ class Notebook:
       parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
     else:
       parser = configparser.ConfigParser()
-    parser.read(ini_file)
+    try:
+      parser.read(ini_file)
+    except configparser.ParsingError:
+      return None
     sections = parser.sections()
     data = {}
     for section in sections:
