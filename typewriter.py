@@ -88,19 +88,25 @@ class Typewriter:
       columns[0][iteration] = ' ' * offset + text
       iteration += 1
     # Adding newlines
+    last_column = len(columns) - 1
     iteration = 0
-    for text in columns[num_of_columns - 1]:
-      columns[num_of_columns - 1][iteration] = text + '\n'
+    for text in columns[last_column]:
+      columns[last_column][iteration] = text + '\n'
       iteration += 1
     # Creating list of rows
     rows = []
     for row in range(len(columns[0])):
       rows.append([])
     current_row = 0
+    # print(columns)
+    # print()
     for row in rows:
       current_column = 0
       for column in columns:
-        text = columns[current_column][current_row]
+        try:
+          text = columns[current_column][current_row]
+        except IndexError:
+          continue
         rows[current_row].append(text)
         current_column += 1
       current_row += 1
