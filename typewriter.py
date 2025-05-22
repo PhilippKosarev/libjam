@@ -51,7 +51,7 @@ class Typewriter:
 
   # Given a list, it returns a string with the elements of the given list
   # arranged in in columns
-  def list_to_columns(self, text_list: list, columns = None, offset = 2):
+  def list_to_columns(self, text_list: list, num_of_columns = None, offset = 2):
     column_width = len(max(text_list, key=len))
     # Automatically set num of columns if not specified otherwise
     if num_of_columns is None:
