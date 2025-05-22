@@ -47,9 +47,14 @@ class Notebook:
       return None
 
   # Reads ini file and returns its contents in the form of a dict
-  def read_ini(self, ini_file: str):
+  def read_ini(self, ini_file: str, inline_comments=False):
+    if drawer.is_file(ini_file) is False:
+      return None
     ini_file = os.path.normpath(ini_file)
-    parser = configparser.ConfigParser()
+    if inline_comments is True:
+      parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
+    else:
+      parser = configparser.ConfigParser()
     parser.read(ini_file)
     sections = parser.sections()
     data = {}
