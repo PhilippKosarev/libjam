@@ -52,22 +52,63 @@ class Typewriter:
   # Given a list, it returns a string with the elements of the given list
   # arranged in in columns
   def list_to_columns(self, text_list: list, columns = None, offset = 2):
+    def list_to_columns(self, text_list: list, num_of_columns = None, offset = 2):
     column_width = len(max(text_list, key=len))
     # Automatically set num of columns if not specified otherwise
-    if columns is None:
+    if num_of_columns is None:
       terminal_width = shutil.get_terminal_size()[0] - 1
-      columns = int(terminal_width / (column_width + offset))
-      if columns < 1: columns = 1
-    output = ""
-    iteration = 1
-    for item in text_list:
-      spaces = column_width - len(item)
-      end = "".ljust(spaces)
-      offset_string = "".ljust(offset)
-      if iteration % columns == 0 or iteration == len(text_list):
-        end = "\n"
-      output += f"{offset_string}{item}{end}"
-      iteration += 1
-    return output
-
+      num_of_columns = int(terminal_width / (column_width + offset))
+      if num_of_columns < 1: num_of_columns = 1
+    # Creating a list of columns
     columns = []
+    iteration = 0
+    for item in text_list:
+      current_column = iteration % num_of_columns
+      if len(columns) <= current_column:
+        columns.append([])
+      columns[current_column].append(item)
+      iteration += 1
+    # Equalising width of columns
+    current_column = 0
+    for column in columns:
+      column_width = 0
+      # Getting column width
+      for text in column:
+        if len(text) > column_width:
+          column_width = len(text)
+      # Adding spaces
+      current_text = 0
+      for text in column:
+        spaces = ' ' * ((column_width - len(text)) + 1)
+        columns[current_column][current_text] = text + spaces
+        current_text += 1
+      current_column += 1
+    # Adding offset
+    iteration = 0
+    for text in columns[0]:
+      columns[0][iteration] = ' ' * offset + text
+      iteration += 1
+    # Adding newlines
+    iteration = 0
+    for text in columns[num_of_columns - 1]:
+      columns[num_of_columns - 1][iteration] = text + '\n'
+      iteration += 1
+    # Creating list of rows
+    rows = []
+    for row in range(len(columns[0])):
+      rows.append([])
+    current_row = 0
+    for row in rows:
+      current_column = 0
+      for column in columns:
+        text = columns[current_column][current_row]
+        rows[current_row].append(text)
+        current_column += 1
+      current_row += 1
+    # Adding rows' text to output
+    output = ''
+    for row in rows:
+      for text in row:
+        output += text
+    # Returning string
+    return output
