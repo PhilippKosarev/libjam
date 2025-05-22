@@ -68,3 +68,11 @@ class Notebook:
         keys[key] = value
       data[section] = keys
     return data
+
+  def write_ini(self, ini_file: str, contents: dict):
+    if drawer.is_file(ini_file) is False:
+      return None
+    ini_file = os.path.normpath(ini_file)
+    parser = configparser.ConfigParser()
+    with open(ini_file, 'w') as file:
+      parser.write(file)
