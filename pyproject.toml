@@ -9,12 +9,12 @@ requires = [
 
 [tool.hatch.build.targets.wheel]
 include = [
-  "*.py",
+  "libjam",
 ]
 
 [project]
 name = "libjam"
-version = "0.0.1"
+version = "0.0.3"
 authors = [
   { name="Philipp Kosarev", email="philipp.kosarev@gmail.com" },
 ]
