@@ -1,0 +1,3 @@
+patool==4.0.0
+rarfile==4.2
+Send2Trash==1.8.3
