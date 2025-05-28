@@ -1,6 +1,12 @@
 # libjam
 A library jam for Python.
 
+## Installing
+libjam is available on [pypi](https://pypi.org/project/libjam/), and can be installed using pip.
+```
+pip install libjam
+```
+
 ## Modules
 libjam consists of of 6 modules:
 
