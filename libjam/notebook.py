@@ -1,5 +1,5 @@
 # Imports
-import os, tomllib, configparser
+import os, tomllib, configparser, json
 from .drawer import Drawer
 
 # Jam classes
@@ -76,3 +76,11 @@ class Notebook:
         parser[section][var_name] = value
     with open(ini_file, 'w') as file:
       parser.write(file)
+
+  def read_json(self, json_file: str):
+    if drawer.is_file(json_file) is False:
+      return None
+    json_file = os.path.normpath(json_file)
+    with open(json_file) as json_data:
+      data = json.load(json_data)
+    return data
