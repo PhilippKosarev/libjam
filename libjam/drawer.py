@@ -1,10 +1,12 @@
 # Imports
 import os, sys, shutil, send2trash, platform, tempfile, pathlib
-import zipfile, patoolib, rarfile
+import zipfile, patoolib, rarfile, subprocess
 from .typewriter import Typewriter
 from .clipboard import Clipboard
 typewriter = Typewriter()
 clipboard = Clipboard()
+
+PLATFORM = platform.system()
 
 # Internal functions
 joinpath = os.path.join
@@ -348,6 +350,7 @@ class Drawer:
     try:
       size = 0
       if self.is_file(path):
+        path = realpath(path)
         size += os.path.getsize(path)
       elif self.is_folder(path):
         subfiles = self.get_files_recursive(path)
@@ -357,3 +360,15 @@ class Drawer:
     except KeyboardInterrupt:
       typewriter.print('Program aborted while gathering size of files.')
       sys.exit(1)
+
+  def open_path(self, path: str):
+    path = realpath(path)
+    if PLATFORM == 'Linux':
+      subprocess.run(['xdg-open', path])
+    elif PLATFORM == 'Windows':
+      subprocess.run(['start', path])
+    elif PLATFORM == 'Darwin':
+      subprocess.run(['open', path])
+    else:
+      return 1
+    return 0
