@@ -1,5 +1,5 @@
 # Imports
-import os, tomllib, configparser, json
+import os, tomllib, configparser, json, ast
 from .drawer import Drawer
 
 # Jam classes
@@ -63,6 +63,7 @@ class Notebook:
       data[section] = keys
     return data
 
+  # Writes an ini file from a given dict to a given path.
   def write_ini(self, ini_file: str, contents: dict):
     if drawer.is_file(ini_file) is False:
       return None
@@ -77,10 +78,17 @@ class Notebook:
     with open(ini_file, 'w') as file:
       parser.write(file)
 
+  # Reads a given json file as a dictionary.
   def read_json(self, json_file: str):
     if drawer.is_file(json_file) is False:
       return None
     json_file = os.path.normpath(json_file)
-    with open(json_file) as json_data:
-      data = json.load(json_data)
+    json_string = open(json_file, 'r').read()
+    try:
+      data = json.loads(json_string)
+    except json.decoder.JSONDecodeError:
+      json_string = json_string.replace('\n', ' ')
+      data = ast.literal_eval(json_string)
+    except:
+      data = None
     return data
