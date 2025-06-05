@@ -87,7 +87,7 @@ class Notebook:
     try:
       data = json.loads(json_string)
     except json.decoder.JSONDecodeError:
-      json_string = json_string.replace('\n', ' ')
+      json_string = json_string.replace('\n', ' ').strip()
       data = ast.literal_eval(json_string)
     except:
       data = None
