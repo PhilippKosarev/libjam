@@ -34,6 +34,8 @@ class Drawer:
 
   # Returns True if give a path to folder
   def is_folder(self, path: str):
+    if path == '':
+      return False
     path = realpath(path)
     return os.path.isdir(path)
 
