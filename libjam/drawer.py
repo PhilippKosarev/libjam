@@ -347,13 +347,13 @@ class Drawer:
     return outpath(temp)
 
   def get_file_size(self, path: str):
+    path = realpath(path)
     try:
-      size = 0
       if self.is_file(path):
-        path = realpath(path)
-        size += os.path.getsize(path)
+        size = os.path.getsize(path)
       elif self.is_folder(path):
         subfiles = self.get_files_recursive(path)
+        size = 0
         for subfile in subfiles:
           size += os.path.getsize(subfile)
       return size
@@ -372,3 +372,6 @@ class Drawer:
     else:
       return 1
     return 0
+
+  def get_platform(self):
+    return PLATFORM
