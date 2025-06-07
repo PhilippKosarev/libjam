@@ -10,14 +10,6 @@ PLATFORM = platform.system()
 
 # Internal functions
 joinpath = os.path.join
-def realpath(path: str or list):
-  if type(path) == str:
-    return os.path.normpath(path)
-  elif type(path) == list:
-    result_list = []
-    for item in path:
-      result_list.append(os.path.normpath(item))
-    return result_list
 
 def outpath(path: str or list):
   if type(path) == str:
@@ -26,6 +18,17 @@ def outpath(path: str or list):
     result_list = []
     for item in path:
       result_list.append(item.replace(os.sep, '/'))
+    return result_list
+
+HOME = outpath(str(pathlib.Path.home()))
+
+def realpath(path: str or list):
+  if type(path) == str:
+    return os.path.normpath(path.replace('~', HOME))
+  elif type(path) == list:
+    result_list = []
+    for item in path:
+      result_list.append(os.path.normpath(item))
     return result_list
 
 
@@ -340,8 +343,7 @@ class Drawer:
 
   # Returns the home folder
   def get_home(self):
-    home = str(pathlib.Path.home())
-    return outpath(home)
+    return HOME
 
   # Returns the temporary folder
   def get_temp(self):
@@ -363,7 +365,7 @@ class Drawer:
       typewriter.print('Program aborted while gathering size of files.')
       sys.exit(1)
 
-  def open_path(self, path: str):
+  def open(self, path: str):
     path = realpath(path)
     if PLATFORM == 'Linux':
       subprocess.run(['xdg-open', path])
