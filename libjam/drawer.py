@@ -20,7 +20,7 @@ def outpath(path: str or list):
       result_list.append(item.replace(os.sep, '/'))
     return result_list
 
-HOME = outpath(str(pathlib.Path.home()))
+HOME = str(pathlib.Path.home())
 
 def realpath(path: str):
   path_prefixes = ['/', '~']
@@ -356,7 +356,7 @@ class Drawer:
 
   # Returns the home folder
   def get_home(self):
-    return HOME
+    return outpath(HOME)
 
   # Returns the temporary folder
   def get_temp(self):
@@ -381,14 +381,14 @@ class Drawer:
   def open(self, path: str):
     path = realpath(path)
     if PLATFORM == 'Linux':
-      subprocess.run(['xdg-open', path])
+      command = 'xdg-open'
     elif PLATFORM == 'Windows':
-      subprocess.run(['start', path])
+      command = 'start'
     elif PLATFORM == 'Darwin':
-      subprocess.run(['open', path])
+      command = 'open'
     else:
       return 1
-    return 0
+    return subprocess.run([command, path])
 
   def get_platform(self):
     return PLATFORM
