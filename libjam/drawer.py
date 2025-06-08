@@ -22,15 +22,20 @@ def outpath(path: str or list):
 
 HOME = outpath(str(pathlib.Path.home()))
 
-def realpath(path: str or list):
-  if type(path) == str:
-    return os.path.normpath(path.replace('~', HOME))
-  elif type(path) == list:
-    result_list = []
-    for item in path:
-      result_list.append(os.path.normpath(item))
-    return result_list
+def realpath(path: str):
+  path_prefixes = ['/', '~']
+  first_char = path[0]
+  if first_char in path_prefixes:
+    path = path.replace('~', HOME)
+    return os.path.normpath(path)
+  else:
+    return path
 
+def realpaths(path: list):
+  result_list = []
+  for item in path:
+    result_list.append(realpath(item))
+  return result_list
 
 # Deals with files
 class Drawer:
@@ -152,13 +157,14 @@ class Drawer:
 
   # Sends given file(s)/folder(s) to trash
   def trash(self, path: str or list):
-    path = realpath(path)
     if type(path) == str:
+      path = realpath(path)
       try:
         send2trash.send2trash(path)
       except FileNotFoundError:
         print(f"File '{path}' wasn't found, skipping sending it to trash.")
     elif type(path) == list:
+      path = realpaths(path)
       for item in path:
         try:
           send2trash.send2trash(item)
@@ -171,11 +177,12 @@ class Drawer:
 
   # Deletes a given file (using trash_file() instead is recommended)
   def delete_file(self, path: str or list):
-    path = realpath(path)
     if type(path) == str:
+      path = realpath(path)
       if self.is_file(path):
         os.remove(path)
     elif type(path) == list:
+      path = realpaths(path)
       for item in path:
         if self.is_file(path):
           os.remove(item)
@@ -200,13 +207,14 @@ class Drawer:
 
   # Returns the parent folder of given file/folder
   def get_parent(self, path: str or list):
-    path = realpath(path)
     if type(path) == str:
+      path = realpath(path)
       basename = self.basename(path)
       parent = path.removesuffix(basename)
       parent = parent.removesuffix(os.sep)
       return outpath(parent)
     elif type(path) == list:
+      path = realpaths(path)
       result_list = []
       for file in path:
         basename = self.basename(file)
@@ -223,14 +231,15 @@ class Drawer:
     return depth
 
   def basename(self, path: str or list):
-    path = realpath(path)
     if type(path) == str:
+      path = realpath(path)
       if self.is_folder(path):
         path = os.path.basename(os.path.normpath(path))
       else:
         path = path.rsplit(os.sep,1)[-1]
       return outpath(path)
     elif type(path) == list:
+      path = realpaths(path)
       return_list = []
       for file in path:
         if self.is_file(file):
@@ -242,7 +251,7 @@ class Drawer:
 
   # Searches for string in list of basenames
   def search_for_files(self, search_term: str, path: list):
-    path = realpath(path)
+    path = realpaths(path)
     result_list = []
     files = self.get_files_recursive(path)
     for file in files:
@@ -252,15 +261,16 @@ class Drawer:
     return outpath(result_list)
 
   def search_for_folder(self, search_term: str, path: str or list):
-    path = realpath(path)
     result_list = []
     if type(path) == str:
+      path = realpath(path)
       subfolders = self.get_folders(path)
       for item in subfolders:
         basename = self.basename(item)
         if basename == search_term:
           result_list.append(item)
     elif type(path) == list:
+      path = realpaths(path)
       for subfolder in path:
         subfolders = self.get_folders(subfolder)
         for item in subfolders:
@@ -270,7 +280,6 @@ class Drawer:
     return outpath(result_list)
 
   def search_for_folders(self, search_term: str, path: str or list):
-    path = realpath(path)
     result_list = []
     def search(search_term: str, path: str):
       folders = self.get_folders_recursive(path)
@@ -279,8 +288,10 @@ class Drawer:
         if search_term.lower() in basename.lower():
           result_list.append(folder)
     if type(path) == str:
+      path = realpath(path)
       search(search_term, path)
     elif type(path) == list:
+      path = realpaths(path)
       for subfolder in path:
         search(search_term, subfolder)
     return outpath(result_list)
@@ -307,6 +318,8 @@ class Drawer:
       return False
 
   # Extracts a given archive
+  # progress_function is called every time a file is extracted from archive, and
+  # it passes number of extracted files and number of files that need to be extracted (done, total)
   def extract_archive(self, archive: str, extract_location: str, progress_function=None):
     archive = realpath(archive)
     extract_location = realpath(extract_location)
