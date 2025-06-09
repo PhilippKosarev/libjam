@@ -40,6 +40,11 @@ def realpaths(path: list):
 # Deals with files
 class Drawer:
 
+  # Converts the given path to absolute
+  def absolute_path(self, path):
+    path = realpath(path)
+    return outpath(path)
+
   # Returns True if give a path to folder
   def is_folder(self, path: str):
     if path == '':
