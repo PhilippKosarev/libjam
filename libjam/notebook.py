@@ -107,16 +107,18 @@ class Notebook:
       parser.write(file)
 
   # Reads a given json file as a dictionary.
+  # Returns None if file doesn't exist.
   def read_json(self, json_file: str):
     if drawer.is_file(json_file) is False:
       return None
     json_file = drawer.absolute_path(json_file)
     json_string = open(json_file, 'r').read()
+    json_string = json_string.replace('null', 'None')
+    # Trying the sane method
     try:
       data = json.loads(json_string)
+    # Exception in case json contains multiline values
     except json.decoder.JSONDecodeError:
-      json_string = json_string.replace('\n', ' ').strip()
+      json_string = ' '.join(json_string.split())
       data = ast.literal_eval(json_string)
-    except:
-      data = None
     return data
