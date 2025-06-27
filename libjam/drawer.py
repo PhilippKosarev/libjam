@@ -90,13 +90,12 @@ class Drawer:
 
   # Returns a list of files in a given folder
   def get_files(self, path: str):
-    path = realpath(path)
     unfiltered_files = self.get_all(path)
     files = []
     for file in unfiltered_files:
-      if self.is_file:
+      if self.is_file(path):
         files.append(file)
-    return outpath(files)
+    return files
 
   # Returns a list of folders in a given folder
   def get_folders(self, path: str):
