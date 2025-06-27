@@ -83,7 +83,10 @@ class Typewriter:
       # Adding spaces
       current_text = 0
       for text in column:
-        spaces = ' ' * ((column_width - len(text)) + 1)
+        if current_column == len(columns) - 1:
+          spaces = ''
+        else:
+          spaces = ' ' * ((column_width - len(text)) + 1)
         columns[current_column][current_text] = text + spaces
         current_text += 1
       current_column += 1
@@ -121,4 +124,4 @@ class Typewriter:
       for text in row:
         output += text
     # Returning string
-    return output
+    return output.rstrip()
