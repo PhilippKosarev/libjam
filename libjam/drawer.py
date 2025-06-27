@@ -88,13 +88,13 @@ class Drawer:
       absolute_files.append(file)
     return outpath(absolute_files)
 
-  # Returns a list of files in a given folder
+  # Returns a list of files in a given folder.
   def get_files(self, path: str):
-    unfiltered_files = self.get_all(path)
+    everything = self.get_all(path)
     files = []
-    for file in unfiltered_files:
-      if self.is_file(path):
-        files.append(file)
+    for item in everything:
+      if self.is_file(item):
+        files.append(item)
     return files
 
   # Returns a list of folders in a given folder
