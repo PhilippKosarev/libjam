@@ -47,11 +47,8 @@ class Notebook:
     if drawer.is_file(ini_file) is False:
       return None
     ini_file = drawer.absolute_path(ini_file)
-    parser = configparser.ConfigParser()
+    parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
     try:
-      parser.read(ini_file)
-    except configparser.InterpolationSyntaxError:
-      parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
       parser.read(ini_file)
     except configparser.DuplicateSectionError:
       if allow_duplicates is True:
