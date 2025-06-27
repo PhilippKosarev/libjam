@@ -43,15 +43,15 @@ class Notebook:
   # Reads ini file and returns its contents in the form of a dict.
   # allow_duplicates is only to be used as a last resort due to the performance
   # impact and inaccuracy in results.
-  def read_ini(self, ini_file: str, inline_comments=False, allow_duplicates=False):
+  def read_ini(self, ini_file: str, allow_duplicates=False):
     if drawer.is_file(ini_file) is False:
       return None
     ini_file = drawer.absolute_path(ini_file)
-    if inline_comments is True:
-      parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
-    else:
-      parser = configparser.ConfigParser()
+    parser = configparser.ConfigParser()
     try:
+      parser.read(ini_file)
+    except configparser.InterpolationSyntaxError:
+      parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
       parser.read(ini_file)
     except configparser.DuplicateSectionError:
       if allow_duplicates is True:
