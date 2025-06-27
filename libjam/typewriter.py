@@ -3,26 +3,31 @@ import shutil
 
 # Responsible for formatting, modification and printing of strings
 class Typewriter:
-  def __init__(self):
-    # Shorthand vars
-    self.BOLD = '\033[1m'
-    self.NORMAL = '\033[0m'
-    self.CLEAR = '\x1b[2K'
-    self.CURSOR_UP = '\033[1A'
+  # Shorthand vars
+  BOLD = '\033[1m'
+  NORMAL = '\033[0m'
+  CLEAR = '\x1b[2K'
+  CURSOR_UP = '\033[1A'
 
   # Gets a string, makes it bold, returns the string
   def bolden(self, text: str):
     text = f'{self.BOLD}{text}{self.NORMAL}'
     return text
 
-  # Clears a given number of lines in the terminal
-  # if given 0 the current line will be erased
+  # Returns current terminal width and height (columns and lines) as a tuple.
+  def get_terminal_size(self):
+    size = shutil.get_terminal_size()
+    x, y = size[0], size[1]
+    return (x, y)
+
+  # Clears a given number of lines in the terminal.
+  # If the specified number of lines is 0 then the current line will be erased.
   def clear_lines(self, lines: int):
     if lines == 0:
       print("\r" + self.CLEAR, end='')
       return
     for line in range(lines):
-      print(self.CURSOR_UP + self.CLEAR, end='')
+      print(self.CLEAR, end=self.CURSOR_UP)
 
   # Clears current line to print a new one.
   # Usecase: after typewriter.print_status()
@@ -38,7 +43,7 @@ class Typewriter:
   # Prints on the same line
   def print_progress(self, status: str, current: int, total: int):
     width = 25
-    progress_float= (current / total)
+    progress_float = (current / total)
     percent = int(round((progress_float* 100), 0))
     percent_string = str(percent)
     if percent < 100:
