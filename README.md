@@ -47,7 +47,6 @@ class CLI:
 # Setting commands and options
 app = "example"
 description = "An example app for the libjam library"
-# help = "" # If you wish to set your own help page text
 commands = {
   'print':     {'function': CLI.hello,
   'description': 'Prints given string'},
@@ -57,14 +56,10 @@ options = {
  'description': 'Appends \'world\' after printing given input'},
 }
 
-# Getting program arguments
-arguments = sys.argv
-# Removing script name from arguments
-arguments.remove(arguments[0])
 # Generating help
 help = captain.generate_help(app, description, commands, options)
 # Interpreting user input
-interpretation = captain.interpret(app, help, commands, arguments, options)
+interpretation = captain.interpret(app, help, commands, options)
 # Getting parsed output
 function = interpretation.get('function')
 options = interpretation.get('options')

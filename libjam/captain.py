@@ -7,6 +7,11 @@ typewriter = Typewriter()
 # Processes command line arguments
 class Captain:
 
+  def get_args(self):
+    args = sys.argv
+    args.pop(0)
+    return args
+
   # Returns a list of args a function requires.
   def get_function_args(self, function):
     args = str(signature(function))
@@ -56,8 +61,9 @@ class Captain:
 
 
   # Interprets input arguments
-  def interpret(self, app: str, help: str, commands: dict, arguments: list, options: dict = None):
+  def interpret(self, app: str, help: str, commands: dict, options: dict = None):
     # Class vars
+    arguments = self.get_args()
     chosen_command = None
     self.function = None
     self.arbitrary_args = False
