@@ -1,12 +1,19 @@
 # Imports
-import sys, re, inspect
+import sys
+from inspect import signature
 from .typewriter import Typewriter
-from .clipboard import Clipboard
 typewriter = Typewriter()
-clipboard = Clipboard()
 
 # Processes command line arguments
 class Captain:
+
+  # Returns a list of args a function requires.
+  def get_function_args(self, function):
+    args = str(signature(function))
+    args = args.removeprefix('(').removesuffix(')').replace(' ', '').split(',')
+    if 'self' in args:
+     args.remove('self')
+    return args
 
   # Returns a generated a help page based on provided inputs
   def generate_help(self, app: str, description: str, commands: dict, options: dict = None):
@@ -71,11 +78,11 @@ class Captain:
           if argument.startswith("--"):
             argument = argument.removeprefix("--")
             if argument == '':
-              print(f"Option '--' unrecognised. Try {app} help")
+              print(f"Invalid option '--'. Try {app} help")
               sys.exit(-1)
             for option in options:
               strings = options.get(option).get('long')
-              if clipboard.is_string_in_list(strings, argument):
+              if argument in strings:
                 options[option]['enabled'] = True
                 self.arg_found = True
             if self.arg_found is False:
@@ -86,14 +93,14 @@ class Captain:
           else:
             argument = argument.removeprefix("-")
             if argument == '':
-              print(f"Option '-' unrecognised. Try {app} help")
+              print(f"Invalid option '-'. Try {app} help")
               sys.exit(-1)
             arguments = list(argument)
             for argument in arguments:
               command_found = False
               for option in options:
                 strings = options.get(option).get('short')
-                if clipboard.is_string_in_list(strings, argument):
+                if argument in strings:
                   options[option]['enabled'] = True
                   command_found = True
             if command_found is False:
@@ -103,25 +110,20 @@ class Captain:
       # Commands
       else:
         if chosen_command is None:
-          if clipboard.is_string_in_list(commands, argument):
-            chosen_command = argument
-            command_function = commands.get(chosen_command).get('function')
-            command_args = inspect.signature(command_function)
-            command_args = command_args.format().replace('(', '').replace(')', '').replace(' ', '')
-            command_args = command_args.split(',')
-            if clipboard.is_string_in_list(command_args, '*args'):
-              command_args.remove('*args')
-              self.arbitrary_args = True
-            if command_args == ['']:
-              command_args = []
-            self.required_args = len(command_args)
-            continue
-          elif argument == 'help':
+          if argument == 'help':
             print(help)
             sys.exit(0)
-        if chosen_command is None:
-          print(f"Command '{argument}' unrecognised. Try {app} help")
-          sys.exit(-1)
+          elif argument in commands:
+            chosen_command = argument
+            command_function = commands.get(chosen_command).get('function')
+            command_function_args = self.get_function_args(command_function)
+            if '*args' in command_function_args:
+              command_function_args.remove('*args')
+              self.arbitrary_args = True
+            self.required_args = len(command_function_args)
+          else:
+            print(f"Command '{argument}' unrecognised. Try {app} help")
+            sys.exit(-1)
 
         # Command arguments
         else:

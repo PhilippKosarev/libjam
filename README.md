@@ -44,14 +44,12 @@ class CLI:
     if options.get('world').get('enabled'):
       print('world!')
 
-cli = CLI()
-
-# Inputs/Commands/Options configuration
+# Setting commands and options
 app = "example"
 description = "An example app for the libjam library"
 # help = "" # If you wish to set your own help page text
 commands = {
-  'print':     {'function': cli.hello,
+  'print':     {'function': CLI.hello,
   'description': 'Prints given string'},
 }
 options = {
@@ -71,5 +69,5 @@ interpretation = captain.interpret(app, help, commands, arguments, options)
 function = interpretation.get('function')
 options = interpretation.get('options')
 # Executing function
-exec(f"cli.{function}")
+exec(f"CLI().{function}")
 ```
