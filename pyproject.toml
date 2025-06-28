@@ -14,7 +14,7 @@ include = [
 
 [project]
 name = "libjam"
-version = "0.0.17"
+version = "0.0.18"
 authors = [
   { name="Philipp Kosarev", email="philipp.kosarev@gmail.com" },
 ]
