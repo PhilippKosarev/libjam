@@ -45,18 +45,19 @@ class Drawer:
     path = realpath(path)
     return outpath(path)
 
-  # Returns True if give a path to folder
+  # Returns True if given a path to a folder.
   def is_folder(self, path: str):
     if path == '':
       return False
     path = realpath(path)
     return os.path.isdir(path)
 
-  # Returns True if give a path to file
+  # Returns True if given a path to a file.
   def is_file(self, path: str):
     path = realpath(path)
     return os.path.isfile(path)
 
+  # Returns True if path exists.
   def exists(self, path: str):
     path = realpath(path)
     is_file = self.is_folder(path)
@@ -78,7 +79,7 @@ class Drawer:
     filetype = os.path.splitext(basename)[1].removeprefix('.')
     return filetype
 
-  # Returns a list of files and folders in a given folder
+  # Returns a list of files and folders in a given path.
   def get_all(self, path: str):
     path = realpath(path)
     relative_files = os.listdir(path)
@@ -234,6 +235,7 @@ class Drawer:
     depth = len(depth)
     return depth
 
+  # Returns the basename of file(s)/folder(s).
   def basename(self, path: str or list):
     if type(path) == str:
       path = realpath(path)
@@ -367,7 +369,8 @@ class Drawer:
     temp = str(tempfile.gettempdir())
     return outpath(temp)
 
-  def get_file_size(self, path: str):
+  # Returns the weight of given file/folder, in bytes.
+  def get_filesize(self, path: str):
     path = realpath(path)
     try:
       if self.is_file(path):
@@ -381,6 +384,34 @@ class Drawer:
     except KeyboardInterrupt:
       typewriter.print('Program aborted while gathering size of files.')
       sys.exit(1)
+
+  # Given a number of bytes, returns a human readable filesize as a tuple.
+  # Tuple format: (value: int, short_unit_name: str, long_unit_name: str)
+  # Example tuple: (6.986356, 'mb', 'megabytes')
+  def get_readable_filesize(self, filesize: int):
+    if filesize > 1000 ** 7:
+      value = filesize / 1000 ** 7
+      return (value, 'zb', 'zettabytes')
+    elif filesize > 1000 ** 6:
+      value = filesize / 1000 ** 6
+      return (value, 'eb', 'exabytes')
+    elif filesize > 1000 ** 5:
+      value = filesize / 1000 ** 5
+      return (value, 'pb', 'petabytes')
+    elif filesize > 1000 ** 4:
+      value = filesize / 1000 ** 4
+      return (value, 'tb', 'terabytes')
+    elif filesize > 1000 ** 3:
+      value = filesize / 1000 ** 3
+      return (value, 'gb', 'gigabytes')
+    elif filesize > 1000 ** 2:
+      value = filesize / 1000 ** 2
+      return (value, 'mb', 'megabytes')
+    elif filesize > 1000:
+      value = filesize / 1000 ** 1
+      return (value, 'kb', 'kilobytes')
+    else:
+      return (filesize, 'b', 'bytes')
 
   def open(self, path: str):
     path = realpath(path)
