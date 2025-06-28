@@ -70,18 +70,24 @@ class Captain:
           # Long options
           if argument.startswith("--"):
             argument = argument.removeprefix("--")
+            if argument == '':
+              print(f"Option '--' unrecognised. Try {app} help")
+              sys.exit(-1)
             for option in options:
               strings = options.get(option).get('long')
               if clipboard.is_string_in_list(strings, argument):
                 options[option]['enabled'] = True
                 self.arg_found = True
             if self.arg_found is False:
-              print(f"Option '{argument}' unrecognized. Try {app} help")
+              print(f"Option '{argument}' unrecognised. Try {app} help")
               sys.exit(-1)
 
           # Short options
           else:
             argument = argument.removeprefix("-")
+            if argument == '':
+              print(f"Option '-' unrecognised. Try {app} help")
+              sys.exit(-1)
             arguments = list(argument)
             for argument in arguments:
               command_found = False
@@ -91,7 +97,7 @@ class Captain:
                   options[option]['enabled'] = True
                   command_found = True
             if command_found is False:
-              print(f"Option '{argument}' unrecognized. Try {app} help")
+              print(f"Option '{argument}' unrecognised. Try {app} help")
               sys.exit(-1)
 
       # Commands
@@ -114,7 +120,7 @@ class Captain:
             print(help)
             sys.exit(0)
         if chosen_command is None:
-          print(f"Command '{argument}' unrecognized. Try {app} help")
+          print(f"Command '{argument}' unrecognised. Try {app} help")
           sys.exit(-1)
 
         # Command arguments
