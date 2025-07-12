@@ -2,10 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatchling",
-  "patool==4.0.0",
-  "rarfile==4.2",
-  "Send2Trash==1.8.3",
-  ]
+]
 
 [tool.hatch.build.targets.wheel]
 include = [
@@ -14,7 +11,7 @@ include = [
 
 [project]
 name = "libjam"
-version = "0.0.19"
+version = "0.0.20"
 authors = [
   { name="Philipp Kosarev", email="philipp.kosarev@gmail.com" },
 ]
@@ -27,6 +24,12 @@ classifiers = [
 ]
 license = "GPL-2.0"
 license-files = ["LICEN[CS]E*"]
+# Deps
+requires = [
+  "patool=>4.0.0",
+  "rarfile=>4.2",
+  "Send2Trash=>1.8.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/philippkosarev/libjam"

@@ -23,11 +23,6 @@ function Publish {
   python3 -m twine upload --repository pypi dist/*
 }
 
-function Update {
-  pip install --upgrade libjam
-}
-
 # Running
 Build
-Ask "Publish new version to PyPi?" && Publish &&
-Ask "Update libjam?" && Update
+Ask "Publish new version to PyPi?" && Publish
