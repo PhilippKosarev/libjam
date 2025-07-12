@@ -11,10 +11,16 @@ class Notebook:
   # Reads a text file and returns a string.
   def read_file(self, path):
     if drawer.is_folder(path):
-      raise FileExistsError(f"Attempted to read folder '{path}' as a text file.")
+      raise FileExistsError(f"Attempted to read folder at '{path}' as a text file.")
     elif drawer.is_file(path) is False:
       raise FileNotFoundError(f"File '{path}' not found.")
     return open(path, 'r').read()
+
+  # Writes a string of text to a given, already existing, file
+  def write_file(self, path, string):
+    if drawer.is_file(path) is False:
+      raise FileNotFoundError(f"Attempted to write file at '{path}'.")
+    return open(path, 'w').write(string)
 
   # Checking if config exists, and creating one if it does not
   def check_config(self, config_template_file: str, config_file: str):
