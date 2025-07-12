@@ -372,18 +372,13 @@ class Drawer:
   # Returns the weight of given file/folder, in bytes.
   def get_filesize(self, path: str):
     path = realpath(path)
-    try:
-      if self.is_file(path):
-        size = os.path.getsize(path)
-      elif self.is_folder(path):
-        subfiles = self.get_files_recursive(path)
-        size = 0
-        for subfile in subfiles:
-          size += os.path.getsize(subfile)
-      return size
-    except KeyboardInterrupt:
-      typewriter.print('Program aborted while gathering size of files.')
-      sys.exit(1)
+    if self.is_file(path):
+      size = os.path.getsize(path)
+    elif self.is_folder(path):
+      subfiles = self.get_files_recursive(path)
+      for file in subfiles:
+        size += os.path.getsize(file)
+    return size
 
   # Given a number of bytes, returns a human readable filesize as a tuple.
   # Tuple format: (value: int, short_unit_name: str, long_unit_name: str)
