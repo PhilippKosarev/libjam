@@ -11,7 +11,7 @@ include = [
 
 [project]
 name = "libjam"
-version = "0.0.20"
+version = "0.0.21"
 authors = [
   { name="Philipp Kosarev", email="philipp.kosarev@gmail.com" },
 ]
@@ -25,10 +25,10 @@ classifiers = [
 license = "GPL-2.0"
 license-files = ["LICEN[CS]E*"]
 # Deps
-requires = [
-  "patool=>4.0.0",
-  "rarfile=>4.2",
-  "Send2Trash=>1.8.3",
+dependencies = [
+  "patool>=4.0.0",
+  "rarfile>=4.2",
+  "Send2Trash>=1.8.3",
 ]
 
 [project.urls]
