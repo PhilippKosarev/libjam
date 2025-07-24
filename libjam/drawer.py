@@ -11,7 +11,7 @@ PLATFORM = platform.system()
 # Internal functions
 joinpath = os.path.join
 
-def outpath(path: str or list):
+def outpath(path: str or list) -> str or list:
   if type(path) == str:
     return path.replace(os.sep, '/')
   elif type(path) == list:
@@ -22,7 +22,7 @@ def outpath(path: str or list):
 
 HOME = str(pathlib.Path.home())
 
-def realpath(path: str):
+def realpath(path: str) -> str:
   path_prefixes = ['/', '~']
   first_char = path[0]
   if first_char in path_prefixes:
@@ -31,7 +31,7 @@ def realpath(path: str):
   else:
     return path
 
-def realpaths(path: list):
+def realpaths(path: list) -> list:
   result_list = []
   for item in path:
     result_list.append(realpath(item))
@@ -41,29 +41,29 @@ def realpaths(path: list):
 class Drawer:
 
   # Converts the given path to absolute
-  def absolute_path(self, path):
+  def absolute_path(self, path) -> str:
     path = realpath(path)
     return outpath(path)
 
   # Returns True if given a path to a folder.
-  def is_folder(self, path: str):
+  def is_folder(self, path: str) -> bool:
     if path == '':
       return False
     path = realpath(path)
     return os.path.isdir(path)
 
   # Returns True if given a path to a file.
-  def is_file(self, path: str):
+  def is_file(self, path: str) -> bool:
     path = realpath(path)
     return os.path.isfile(path)
 
   # Returns True if path exists.
-  def exists(self, path: str):
+  def exists(self, path: str) -> bool:
     path = realpath(path)
     return os.path.exists(path)
 
   # Returns the extension of a given file (a string)
-  def get_filetype(self, path: str):
+  def get_filetype(self, path: str) -> str:
     if self.is_folder(path):
       return "folder"
     basename = self.basename(path)
@@ -71,7 +71,7 @@ class Drawer:
     return filetype
 
   # Returns a list of files and folders in a given path.
-  def get_all(self, path: str):
+  def get_all(self, path: str) -> list:
     path = realpath(path)
     relative_files = os.listdir(path)
     absolute_files = []
@@ -81,7 +81,7 @@ class Drawer:
     return outpath(absolute_files)
 
   # Returns a list of files in a given folder.
-  def get_files(self, path: str):
+  def get_files(self, path: str) -> list:
     everything = self.get_all(path)
     files = []
     for item in everything:
@@ -89,16 +89,16 @@ class Drawer:
         files.append(item)
     return files
 
-  # Returns a list of folders in a given folder
-  def get_folders(self, path: str):
+  # Returns a list of folders in a given folder.
+  def get_folders(self, path: str) -> list:
     folders = []
     for item in self.get_all(path):
       if self.is_folder(item):
         folders.append(item)
     return outpath(folders)
 
-  # Returns a list of all files in a given folder
-  def get_files_recursive(self, path: str):
+  # Returns a list of all files in a given folder.
+  def get_files_recursive(self, path: str) -> list:
     path = realpath(path)
     files = []
     for folder in os.walk(path, topdown=True):
@@ -107,8 +107,8 @@ class Drawer:
         files.append(file)
     return outpath(files)
 
-  # Returns a list of all folders in a given folder
-  def get_folders_recursive(self, path: str):
+  # Returns a list of all folders in a given folder.
+  def get_folders_recursive(self, path: str) -> list:
     path = realpath(path)
     folders = []
     for folder in os.walk(path, topdown=True):
@@ -117,29 +117,29 @@ class Drawer:
         folders.append(subfolder)
     return outpath(folders)
 
-  # Renames a given file in a given path
-  def rename(self, folder: str, old_file: str, new_file: str):
+  # Renames a given file in a given path. Returns path to renamed file/folder.
+  def rename(self, folder: str, old_filename: str, new_filename: str) -> str:
     if not folder.endswith('/'):
       folder = folder = '/'
     folder = realpath(folder)
-    os.rename(f"{folder}/{old_file}", f"{folder}/{new_file}")
-    return 0
+    os.rename(folder + old_filename, folder + new_filename)
+    return outpath(folder + new_filename)
 
-  # Creates a new folder
-  def make_folder(self, path: str):
+  # Creates a new folder.
+  def make_folder(self, path: str) -> str:
     path = realpath(path)
     path = os.mkdir(path)
     return outpath(path)
 
-  # Creates a new file
-  def make_file(self, path: str):
+  # Creates a new file.
+  def make_file(self, path: str) -> str:
     path = realpath(path)
     new = open(path, 'w')
     new.close()
     return outpath(path)
 
-  # Copies given file(s)/folder(s)
-  def copy(self, source: str, destination: str, overwrite=False):
+  # Copies given file(s)/folder(s).
+  def copy(self, source: str, destination: str, overwrite=False) -> str:
     source = realpath(source)
     destination = realpath(destination)
     if self.is_file(source):
@@ -148,9 +148,8 @@ class Drawer:
       shutil.copytree(source, destination, dirs_exist_ok=overwrite)
     return outpath(destination)
 
-
-  # Sends given file(s)/folder(s) to trash
-  def trash(self, path: str or list):
+  # Sends given file(s)/folder(s) to trash.
+  def trash(self, path: str or list) -> str or list:
     if type(path) == str:
       path = realpath(path)
       try:
@@ -168,9 +167,8 @@ class Drawer:
       return None
     return outpath(path)
 
-
-  # Deletes a given file (using trash_file() instead is recommended)
-  def delete_file(self, path: str or list):
+  # Deletes a given file.
+  def delete_file(self, path: str or list) -> str or list:
     if type(path) == str:
       path = realpath(path)
       if self.is_file(path):
@@ -182,8 +180,8 @@ class Drawer:
           os.remove(item)
     return outpath(path)
 
-  # Deletes a given folder (using trash() instead is recommended)
-  def delete_folder(self, path: str):
+  # Deletes a given folder.
+  def delete_folder(self, path: str) -> str:
     path = realpath(path)
     try:
       if self.is_folder(path):
@@ -199,8 +197,8 @@ class Drawer:
       sys.exit(1)
     return outpath(path)
 
-  # Returns the parent folder of given file/folder
-  def get_parent(self, path: str or list):
+  # Returns the parent folder of given file/folder.
+  def get_parent(self, path: str or list) -> str or list:
     if type(path) == str:
       path = realpath(path)
       basename = self.basename(path)
@@ -217,15 +215,13 @@ class Drawer:
         result_list.append(parent)
       return outpath(result_list)
 
-  # Returns depth of given file/folder
-  def get_depth(self, path: str):
-    path = realpath(path)
-    depth = path.split(sep=os.sep)
-    depth = len(depth)
+  # Returns depth of given file/folder.
+  def get_depth(self, path: str) -> int:
+    depth = len(path.split('/'))
     return depth
 
   # Returns the basename of file(s)/folder(s).
-  def basename(self, path: str or list):
+  def basename(self, path: str or list) -> str or list:
     if type(path) == str:
       path = realpath(path)
       if self.is_folder(path):
@@ -244,8 +240,8 @@ class Drawer:
         return_list.append(file)
       return outpath(return_list)
 
-  # Searches for string in list of basenames
-  def search_for_files(self, search_term: str, path: list):
+  # Searches for string in list of basenames.
+  def search_for_files(self, search_term: str, path: list) -> list:
     path = realpaths(path)
     result_list = []
     files = self.get_files_recursive(path)
@@ -255,7 +251,7 @@ class Drawer:
         result_list.append(file)
     return outpath(result_list)
 
-  def search_for_folder(self, search_term: str, path: str or list):
+  def search_for_folder(self, search_term: str, path: str or list) -> list:
     result_list = []
     if type(path) == str:
       path = realpath(path)
@@ -274,7 +270,7 @@ class Drawer:
             result_list.append(item)
     return outpath(result_list)
 
-  def search_for_folders(self, search_term: str, path: str or list):
+  def search_for_folders(self, search_term: str, path: str or list) -> list:
     result_list = []
     def search(search_term: str, path: str):
       folders = self.get_folders_recursive(path)
@@ -292,7 +288,7 @@ class Drawer:
     return outpath(result_list)
 
   # Finds a folder with specified files
-  def find_folders_with_files(self, path: str, required_files: list):
+  def find_folders_with_files(self, path: str, required_files: list) -> list:
     path = realpath(path)
     matches = []
     for req in required_files:
@@ -304,7 +300,7 @@ class Drawer:
 
   # Checks if a given file is an archive
   archive_types = ['zip', 'rar', '7z']
-  def is_archive(self, path: str):
+  def is_archive(self, path: str) -> bool:
     path = realpath(path)
     filetype = self.get_filetype(path)
     if clipboard.is_string_in_list(self.archive_types, filetype):
@@ -312,10 +308,13 @@ class Drawer:
     else:
       return False
 
-  # Extracts a given archive
-  # progress_function is called every time a file is extracted from archive, and
-  # it passes number of extracted files and number of files that need to be extracted (done, total)
-  def extract_archive(self, archive: str, extract_location: str, progress_function=None):
+  # Extracts a given archive.
+  # progress_function is called every time a file is extracted from the archive,
+  # it passes number of extracted files and number of files that need to be extracted (done, total).
+  # Example definition of progress_function:
+  # def progress_function(done: int, total: int):
+  #   print(f"Extracted {done} files out of {total} files total")
+  def extract_archive(self, archive: str, extract_location: str, progress_function=None) -> str:
     archive = realpath(archive)
     extract_location = realpath(extract_location)
     archive_type = self.get_filetype(archive)
@@ -349,17 +348,17 @@ class Drawer:
       exit()
     return outpath(extract_location)
 
-  # Returns the home folder
-  def get_home(self):
+  # Returns the home folder.
+  def get_home(self) -> str:
     return outpath(HOME)
 
-  # Returns the temporary folder
-  def get_temp(self):
+  # Returns the temporary folder.
+  def get_temp(self) -> str:
     temp = str(tempfile.gettempdir())
     return outpath(temp)
 
   # Returns the weight of a given file/folder, in bytes.
-  def get_filesize(self, path: str):
+  def get_filesize(self, path: str) -> int:
     path = realpath(path)
     if self.is_file(path):
       size = os.path.getsize(path)
@@ -399,7 +398,7 @@ class Drawer:
       return (filesize, 'b', 'bytes')
 
   # Same as xdg-open, but platform-independent.
-  def open(self, path: str):
+  def open(self, path: str) -> subprocess.CompletedProcess:
     path = realpath(path)
     if PLATFORM == 'Linux':
       command = 'xdg-open'
@@ -411,7 +410,7 @@ class Drawer:
       return 1
     return subprocess.run([command, path])
 
-  # Returns host os platform.
+  # Returns host OS name.
   # Possible values: 'Linux', 'Windows', 'Darwin'.
-  def get_platform(self):
+  def get_platform(self) -> str:
     return PLATFORM
