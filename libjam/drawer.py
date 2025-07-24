@@ -196,22 +196,17 @@ class Drawer:
     return return_list
 
   # Returns the parent folder of given file/folder.
-  def get_parent(self, path: str or list) -> str or list:
-    if type(path) == str:
-      path = realpath(path)
-      basename = self.basename(path)
-      parent = path.removesuffix(basename)
-      parent = parent.removesuffix(os.sep)
-      return outpath(parent)
-    elif type(path) == list:
-      path = realpaths(path)
-      result_list = []
-      for file in path:
-        basename = self.basename(file)
-        parent = file.removesuffix(basename)
-        parent = parent.removesuffix(os.sep)
-        result_list.append(parent)
-      return outpath(result_list)
+  def get_parent(self, path: str) -> str:
+    basename = self.basename(path)
+    parent = path.removesuffix(basename)
+    parent = parent.removesuffix('/')
+    return parent
+
+  def get_parents(self, paths: list) -> list:
+    return_list = []
+    for path in paths:
+      return_list.append( self.get_parent(path) )
+    return return_list
 
   # Returns depth of given file/folder.
   def get_depth(self, path: str) -> int:
