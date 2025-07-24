@@ -213,25 +213,21 @@ class Drawer:
     depth = len(path.split('/'))
     return depth
 
-  # Returns the basename of file(s)/folder(s).
-  def basename(self, path: str or list) -> str or list:
-    if type(path) == str:
-      path = realpath(path)
-      if self.is_folder(path):
-        path = os.path.basename(os.path.normpath(path))
-      else:
-        path = path.rsplit(os.sep,1)[-1]
-      return outpath(path)
-    elif type(path) == list:
-      path = realpaths(path)
-      return_list = []
-      for file in path:
-        if self.is_file(file):
-          file = os.path.basename(file)
-        elif self.is_folder(file):
-          file = os.path.basename(os.path.normpath(file))
-        return_list.append(file)
-      return outpath(return_list)
+  # Returns a given file's/folder's basename.
+  def get_basename(self, path: str) -> str:
+    path = realpath(path)
+    if self.is_folder(path):
+      path = os.path.basename(os.path.normpath(path))
+    else:
+      path = path.rsplit(os.sep,1)[-1]
+    return outpath(path)
+
+  # Given a list of paths, returns a list of basenames.
+  def get_basenames(self, paths: list) -> list:
+    return_list = []
+    for path in paths:
+      return_list.append( self.get_basename(path) )
+    return return_list
 
   # Searches for string in list of basenames.
   def search_for_files(self, search_term: str, path: list) -> list:
