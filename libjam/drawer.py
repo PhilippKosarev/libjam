@@ -148,22 +148,21 @@ class Drawer:
       shutil.copytree(source, destination, dirs_exist_ok=overwrite)
     return outpath(destination)
 
-  # Sends given file(s)/folder(s) to trash.
-  def trash(self, path: str or list) -> str or list:
-    if type(path) == str:
-      path = realpath(path)
-      try:
-        send2trash.send2trash(path)
-      except FileNotFoundError:
-        raise FileNotFoundError(f"Error sending '{path}' to trash.")
-    elif type(path) == list:
-      path = realpaths(path)
-      for item in path:
-        try:
-          send2trash.send2trash(item)
-        except FileNotFoundError:
-          raise FileNotFoundError(f"Error sending '{path}' to trash.")
+  # Sends given file/folder to trash.
+  def trash_path(self, path: str) -> str:
+    path = realpath(path)
+    try:
+      return send2trash.send2trash(path)
+    except FileNotFoundError:
+      raise FileNotFoundError(f"Error sending '{path}' to trash.")
     return outpath(path)
+
+  # Sends given files/folders to trash.
+  def trash_paths(self, paths: list) -> list:
+    return_list = []
+    for path in paths:
+      return_list.append( self.trash_path(path) )
+    return return_list
 
   # Deletes a given file.
   def delete_file(self, path: str or list) -> str or list:
