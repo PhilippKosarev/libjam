@@ -165,17 +165,20 @@ class Drawer:
     return return_list
 
   # Deletes a given file.
-  def delete_file(self, path: str or list) -> str or list:
-    if type(path) == str:
-      path = realpath(path)
-      if self.is_file(path):
-        os.remove(path)
-    elif type(path) == list:
-      path = realpaths(path)
-      for item in path:
-        if self.is_file(path):
-          os.remove(item)
-    return outpath(path)
+  def delete_file(self, file: str) -> str:
+    file = realpath(file)
+    if self.is_file(file):
+      os.remove(file)
+      return outpath(file)
+    else:
+      raise IsADirectoryError(f"Attempted to delete a folder '{path}'.")
+
+  # Deletes given files.
+  def delete_files(self, files: list) -> list:
+    return_list = []
+    for file in files:
+      return_list.append(self.delete_file(file))
+    return return_list
 
   # Deletes a given folder.
   def delete_folder(self, path: str) -> str:
