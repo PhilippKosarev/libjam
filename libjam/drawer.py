@@ -40,7 +40,7 @@ def realpaths(path: list) -> list:
 # Deals with files
 class Drawer:
 
-  # Converts the given path to absolute
+  # Converts the given path to absolute.
   def absolute_path(self, path) -> str:
     path = realpath(path)
     return outpath(path)
@@ -155,16 +155,14 @@ class Drawer:
       try:
         send2trash.send2trash(path)
       except FileNotFoundError:
-        print(f"File '{path}' wasn't found, skipping sending it to trash.")
+        raise FileNotFoundError(f"Error sending '{path}' to trash.")
     elif type(path) == list:
       path = realpaths(path)
       for item in path:
         try:
           send2trash.send2trash(item)
         except FileNotFoundError:
-          print(f"File '{path}' wasn't found, skipping sending it to trash.")
-    else:
-      return None
+          raise FileNotFoundError(f"Error sending '{path}' to trash.")
     return outpath(path)
 
   # Deletes a given file.
