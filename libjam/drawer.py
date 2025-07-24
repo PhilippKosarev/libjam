@@ -60,21 +60,12 @@ class Drawer:
   # Returns True if path exists.
   def exists(self, path: str):
     path = realpath(path)
-    is_file = self.is_folder(path)
-    is_folder = self.is_file(path)
-    if is_file or is_folder:
-      return True
-    else:
-      return False
-
+    return os.path.exists(path)
 
   # Returns the extension of a given file (a string)
   def get_filetype(self, path: str):
-    path = realpath(path)
     if self.is_folder(path):
       return "folder"
-    elif self.is_file(path) is False:
-      return None
     basename = self.basename(path)
     filetype = os.path.splitext(basename)[1].removeprefix('.')
     return filetype
@@ -100,7 +91,6 @@ class Drawer:
 
   # Returns a list of folders in a given folder
   def get_folders(self, path: str):
-    path = realpath(path)
     folders = []
     for item in self.get_all(path):
       if self.is_folder(item):
@@ -122,18 +112,18 @@ class Drawer:
     path = realpath(path)
     folders = []
     for folder in os.walk(path, topdown=True):
-      for item in folder[1]:
-        item = joinpath(folder[0], item)
-        folders.append(item)
+      for subfolder in folder[1]:
+        subfolder = joinpath(folder[0], subfolder)
+        folders.append(subfolder)
     return outpath(folders)
-
 
   # Renames a given file in a given path
   def rename(self, folder: str, old_file: str, new_file: str):
+    if not folder.endswith('/'):
+      folder = folder = '/'
     folder = realpath(folder)
     os.rename(f"{folder}/{old_file}", f"{folder}/{new_file}")
     return 0
-
 
   # Creates a new folder
   def make_folder(self, path: str):
@@ -147,7 +137,6 @@ class Drawer:
     new = open(path, 'w')
     new.close()
     return outpath(path)
-
 
   # Copies given file(s)/folder(s)
   def copy(self, source: str, destination: str, overwrite=False):
@@ -369,21 +358,22 @@ class Drawer:
     temp = str(tempfile.gettempdir())
     return outpath(temp)
 
-  # Returns the weight of given file/folder, in bytes.
+  # Returns the weight of a given file/folder, in bytes.
   def get_filesize(self, path: str):
     path = realpath(path)
     if self.is_file(path):
       size = os.path.getsize(path)
     elif self.is_folder(path):
+      size = 0
       subfiles = self.get_files_recursive(path)
       for file in subfiles:
         size += os.path.getsize(file)
     return size
 
-  # Given a number of bytes, returns a human readable filesize as a tuple.
-  # Tuple format: (value: int, short_unit_name: str, long_unit_name: str)
+  # Given a number of bytes, returns a human readable filesize, as a tuple.
+  # Tuple format: (value: float, short_unit_name: str, long_unit_name: str)
   # Example tuple: (6.986356, 'mb', 'megabytes')
-  def get_readable_filesize(self, filesize: int):
+  def get_readable_filesize(self, filesize: int) -> tuple:
     if filesize > 1000 ** 7:
       value = filesize / 1000 ** 7
       return (value, 'zb', 'zettabytes')
@@ -408,6 +398,7 @@ class Drawer:
     else:
       return (filesize, 'b', 'bytes')
 
+  # Same as xdg-open, but platform-independent.
   def open(self, path: str):
     path = realpath(path)
     if PLATFORM == 'Linux':
@@ -420,5 +411,7 @@ class Drawer:
       return 1
     return subprocess.run([command, path])
 
+  # Returns host os platform.
+  # Possible values: 'Linux', 'Windows', 'Darwin'.
   def get_platform(self):
     return PLATFORM
