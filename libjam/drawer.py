@@ -181,21 +181,19 @@ class Drawer:
     return return_list
 
   # Deletes a given folder.
-  def delete_folder(self, path: str) -> str:
-    path = realpath(path)
-    try:
-      if self.is_folder(path):
-        shutil.rmtree(path)
-      else:
-        return None
-    except KeyboardInterrupt:
-      typewriter.print("Folder deletion cancelled.")
-      shutil.rmtree(path)
-      sys.exit(-1)
-    except PermissionError:
-      typewriter.print(f"Failed to delete folder '{path}', due to insufficient permissions.")
-      sys.exit(1)
-    return outpath(path)
+  def delete_folder(self, folder: str) -> str:
+    if self.is_folder(path):
+      folder = realpath(folder)
+      shutil.rmtree(folder)
+    else:
+      raise NotADirectoryError(f"Error deleting '{folder}'.")
+    return outpath(folder)
+
+  def delete_folders(self, folders: list) -> list:
+    return_list = []
+    for folder in folders:
+      return_list.append(self.delete_folder(folder))
+    return return_list
 
   # Returns the parent folder of given file/folder.
   def get_parent(self, path: str or list) -> str or list:
