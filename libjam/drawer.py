@@ -270,11 +270,11 @@ class Drawer:
           progress_function(extracted, to_extract)
     return outpath(extract_location)
 
-  # Returns the home folder.
+  # Returns the user's home folder.
   def get_home(self) -> str:
     return outpath(HOME)
 
-  # Returns the temporary folder.
+  # Returns the system's temporary folder.
   def get_temp(self) -> str:
     temp = str(tempfile.gettempdir())
     return outpath(temp)
@@ -329,10 +329,10 @@ class Drawer:
     elif PLATFORM == 'Darwin':
       command = 'open'
     else:
-      return 1
+      raise NotImplementedError(f"Platform '{PLATFORM}' is not supported.")
     return subprocess.run([command, path])
 
   # Returns host OS name.
-  # Possible values: 'Linux', 'Windows', 'Darwin'.
+  # Common values: 'Linux', 'Windows', 'Darwin'.
   def get_platform(self) -> str:
     return PLATFORM
