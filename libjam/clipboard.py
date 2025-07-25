@@ -1,13 +1,6 @@
 # Deals with lists and such
 class Clipboard:
 
-  # Checks if there is a string in a list
-  def is_string_in_list(self, input_list: list, input_string: str):
-    for item in input_list:
-      if item == input_string:
-        return True
-    return False
-
   # Returns items present in both given lists
   def get_duplicates(self, input_list1: list, input_list2: list):
     result_list = []
