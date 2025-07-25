@@ -229,15 +229,11 @@ class Drawer:
       return_list.append( self.get_basename(path) )
     return return_list
 
-  # Checks if a given file is an archive.
-  archive_types = ['zip', 'rar', '7z']
-  def is_archive(self, path: str) -> bool:
-    path = realpath(path)
+  # Given a path to an archive, returns whether archive's extraction is supported.
+  def is_archive_supported(self, path: str) -> bool:
+    supported_archive_types = ['zip', 'rar', '7z']
     filetype = self.get_filetype(path)
-    if clipboard.is_string_in_list(self.archive_types, filetype):
-      return True
-    else:
-      return False
+    return filetype in supported_archive_types
 
   # Extracts a given archive to a specified location.
   # progress_function is called every time a file is extracted from the archive,
