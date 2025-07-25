@@ -229,65 +229,7 @@ class Drawer:
       return_list.append( self.get_basename(path) )
     return return_list
 
-  # Searches for string in list of basenames.
-  def search_for_files(self, search_term: str, path: list) -> list:
-    path = realpaths(path)
-    result_list = []
-    files = self.get_files_recursive(path)
-    for file in files:
-      basename = self.basename(file)
-      if search_term.lower() in basename.lower():
-        result_list.append(file)
-    return outpath(result_list)
-
-  def search_for_folder(self, search_term: str, path: str or list) -> list:
-    result_list = []
-    if type(path) == str:
-      path = realpath(path)
-      subfolders = self.get_folders(path)
-      for item in subfolders:
-        basename = self.basename(item)
-        if basename == search_term:
-          result_list.append(item)
-    elif type(path) == list:
-      path = realpaths(path)
-      for subfolder in path:
-        subfolders = self.get_folders(subfolder)
-        for item in subfolders:
-          basename = self.basename(item)
-          if basename == search_term:
-            result_list.append(item)
-    return outpath(result_list)
-
-  def search_for_folders(self, search_term: str, path: str or list) -> list:
-    result_list = []
-    def search(search_term: str, path: str):
-      folders = self.get_folders_recursive(path)
-      for folder in folders:
-        basename = self.basename(folder)
-        if search_term.lower() in basename.lower():
-          result_list.append(folder)
-    if type(path) == str:
-      path = realpath(path)
-      search(search_term, path)
-    elif type(path) == list:
-      path = realpaths(path)
-      for subfolder in path:
-        search(search_term, subfolder)
-    return outpath(result_list)
-
-  # Finds a folder with specified files
-  def find_folders_with_files(self, path: str, required_files: list) -> list:
-    path = realpath(path)
-    matches = []
-    for req in required_files:
-      matched_files = self.get_parent(self.search(req, path))
-      matched_files = Clipboard().deduplicate(matched_files)
-      if matched_files != []:
-        matches += matched_files
-    return outpath(matches)
-
-  # Checks if a given file is an archive
+  # Checks if a given file is an archive.
   archive_types = ['zip', 'rar', '7z']
   def is_archive(self, path: str) -> bool:
     path = realpath(path)
@@ -297,15 +239,14 @@ class Drawer:
     else:
       return False
 
-  # Extracts a given archive.
+  # Extracts a given archive to a specified location.
   # progress_function is called every time a file is extracted from the archive,
   # it passes number of extracted files and number of files that need to be extracted (done, total).
   # Example definition of progress_function:
   # def progress_function(done: int, total: int):
   #   print(f"Extracted {done} files out of {total} files total")
   def extract_archive(self, archive: str, extract_location: str, progress_function=None) -> str:
-    archive = realpath(archive)
-    extract_location = realpath(extract_location)
+    archive, extract_location = realpath(archive), realpath(extract_location)
     archive_type = self.get_filetype(archive)
     archive_basename = self.basename(archive).removesuffix(f".{archive_type}")
     extract_location = joinpath(extract_location, archive_basename)
