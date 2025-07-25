@@ -1,4 +1,4 @@
-# Deals with lists and such
+# Deals with lists and such.
 class Clipboard:
 
   # Returns items present in both given lists.

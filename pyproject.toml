@@ -11,13 +11,13 @@ include = [
 
 [project]
 name = "libjam"
-version = "0.0.22"
+version = "0.1.0"
 authors = [
   { name="Philipp Kosarev", email="philipp.kosarev@gmail.com" },
 ]
 description = "A library jam for Python."
 readme = "README.md"
-requires-python = ">=3.12.0"
+requires-python = ">=3.0.0"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -27,8 +27,8 @@ license-files = ["LICEN[CS]E*"]
 # Deps
 dependencies = [
   "patool>=4.0.0",
-  "rarfile>=4.2",
-  "Send2Trash>=1.8.3",
+  "rarfile>=4.0",
+  "Send2Trash>=1.8.0",
   "psutil>=7.0.0",
 ]
 
