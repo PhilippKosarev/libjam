@@ -236,42 +236,38 @@ class Drawer:
     return filetype in supported_archive_types
 
   # Extracts a given archive to a specified location.
-  # progress_function is called every time a file is extracted from the archive,
-  # it passes number of extracted files and number of files that need to be extracted (done, total).
-  # Example definition of progress_function:
+  # progress_function is called every time a file is extracted from the archive.
+  # progress_function is only supported for ZIP and RAR archives.
+  # Example definition of a progress_function:
   # def progress_function(done: int, total: int):
   #   print(f"Extracted {done} files out of {total} files total")
-  def extract_archive(self, archive: str, extract_location: str, progress_function=None) -> str:
-    archive, extract_location = realpath(archive), realpath(extract_location)
+  def extract_archive(
+    self, archive: str, extract_location: str, progress_function=None,
+  ) -> str:
+    if not self.is_archive_supported(archive):
+      raise NotImplementedError(f"Extracting archive at '{archive}' is not supported.")
     archive_type = self.get_filetype(archive)
-    archive_basename = self.basename(archive).removesuffix(f".{archive_type}")
-    extract_location = joinpath(extract_location, archive_basename)
-    try:
-      if archive_type == 'zip': archive_function = zipfile.ZipFile
-      elif archive_type == 'rar': archive_function = rarfile.RarFile
-      elif archive_type == '7z':
-        try:
-          patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
-          return extract_location
-        except PatoolError:
-          print("Please install the 'p7zip' package to process 7zip archives.")
-          return None
-      else:
-        return None
-      if archive_type == 'zip' or archive_type == 'rar':
-        archive_obj = archive_function(archive)
-        archived_files = archive_obj.namelist()
-        to_extract = len(archived_files)
-        extracted = 0
-        for archived_file in archived_files:
-          archive_obj.extract(archived_file, path=extract_location)
-          extracted += 1
-          if progress_function is not None:
-            progress_function(extracted, to_extract)
-    except KeyboardInterrupt:
-      typewriter.print("Archive extraction cancelled.")
-      self.delete_folder(extract_location)
-      exit()
+    archive_basename = self.get_basename(archive).removesuffix(f".{archive_type}")
+    extract_location = f"{extract_location}/{archive_basename}"
+    archive, extract_location = realpath(archive), realpath(extract_location)
+    if archive_type == '7z':
+      try:
+        patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
+      except PatoolError:
+        raise RuntimeError("It appears that 7Zip is not installed on this system.")
+    elif archive_type in ('zip', 'rar'):
+      if archive_type == 'zip':
+        archive_object = zipfile.ZipFile(archive)
+      elif archive_type == 'rar':
+        archive_object = rarfile.RarFile(archive)
+      archived_files = archive_object.namelist()
+      to_extract = len(archived_files)
+      extracted = 0
+      for archived_file in archived_files:
+        archive_object.extract(archived_file, path=extract_location)
+        extracted += 1
+        if progress_function is not None:
+          progress_function(extracted, to_extract)
     return outpath(extract_location)
 
   # Returns the home folder.
