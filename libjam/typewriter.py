@@ -9,16 +9,15 @@ class Typewriter:
   CLEAR = '\x1b[2K'
   CURSOR_UP = '\033[1A'
 
-  # Gets a string, makes it bold, returns the string
-  def bolden(self, text: str):
+  # Gets a string, makes it bold, returns the string.
+  def bolden(self, text: str) -> str:
     text = f'{self.BOLD}{text}{self.NORMAL}'
     return text
 
   # Returns current terminal width and height (columns and lines) as a tuple.
-  def get_terminal_size(self):
+  def get_terminal_size(self) -> tuple:
     size = shutil.get_terminal_size()
-    x, y = size[0], size[1]
-    return (x, y)
+    return (size[0], size[1])
 
   # Clears a given number of lines in the terminal.
   # If the specified number of lines is 0 then the current line will be erased.
@@ -30,7 +29,7 @@ class Typewriter:
       print(self.CLEAR, end=self.CURSOR_UP)
 
   # Clears current line to print a new one.
-  # Usecase: after typewriter.print_status()
+  # Common usecase: after typewriter.print_status()
   def print(self, text: str):
     self.clear_lines(0)
     print(text)
@@ -40,7 +39,7 @@ class Typewriter:
     self.clear_lines(0)
     print(f" {status}", end='\r')
 
-  # Prints on the same line
+  # Clears the current line and prints the progress bar on the same line.
   def print_progress(self, status: str, current: int, total: int):
     width = 25
     progress_float = (current / total)
@@ -55,8 +54,10 @@ class Typewriter:
     self.print_status(f"{percent_string}% [{progress_bar}] {status}: {current}/{total}")
 
   # Given a list, it returns a string with the elements of the given list
-  # arranged in in columns
-  def list_to_columns(self, text_list: list, num_of_columns = None, offset = 2):
+  # arranged in in columns.
+  def list_to_columns(
+    self, text_list: list, num_of_columns = None, offset = 2,
+  ) -> str:
     column_width = len(max(text_list, key=len))
     # Automatically set num of columns if not specified otherwise
     if num_of_columns is None:
