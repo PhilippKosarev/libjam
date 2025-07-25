@@ -1,32 +1,17 @@
 # Imports
-import os, sys, shutil, send2trash, platform, tempfile, pathlib
-import zipfile, patoolib, rarfile, subprocess
-from .typewriter import Typewriter
-from .clipboard import Clipboard
-typewriter = Typewriter()
-clipboard = Clipboard()
-
-PLATFORM = platform.system()
+import os, sys, shutil, pathlib
+import subprocess, send2trash, platform, tempfile
+import zipfile, rarfile, patoolib
 
 # Internal functions
 joinpath = os.path.join
 
-def outpath(path: str or list) -> str or list:
-  if type(path) == str:
-    return path.replace(os.sep, '/')
-  elif type(path) == list:
-    result_list = []
-    for item in path:
-      result_list.append(item.replace(os.sep, '/'))
-    return result_list
-
-HOME = str(pathlib.Path.home())
-
 def realpath(path: str) -> str:
+  home = str(pathlib.Path.home())
   path_prefixes = ['/', '~']
   first_char = path[0]
   if first_char in path_prefixes:
-    path = path.replace('~', HOME)
+    path = path.replace('~', home)
     return os.path.normpath(path)
   else:
     return path
@@ -36,6 +21,15 @@ def realpaths(path: list) -> list:
   for item in path:
     result_list.append(realpath(item))
   return result_list
+
+def outpath(path: str or list) -> str or list:
+  if type(path) == str:
+    return path.replace(os.sep, '/')
+  elif type(path) == list:
+    result_list = []
+    for item in path:
+      result_list.append(item.replace(os.sep, '/'))
+    return result_list
 
 # Deals with files
 class Drawer:
@@ -272,7 +266,7 @@ class Drawer:
 
   # Returns the user's home folder.
   def get_home(self) -> str:
-    return outpath(HOME)
+    return outpath(str(pathlib.Path.home()))
 
   # Returns the system's temporary folder.
   def get_temp(self) -> str:
@@ -322,17 +316,18 @@ class Drawer:
   # Same as xdg-open, but platform-independent.
   def open(self, path: str) -> subprocess.CompletedProcess:
     path = realpath(path)
-    if PLATFORM == 'Linux':
+    platform = self.get_platform()
+    if platform == 'Linux':
       command = 'xdg-open'
-    elif PLATFORM == 'Windows':
+    elif platform == 'Windows':
       command = 'start'
-    elif PLATFORM == 'Darwin':
+    elif platform == 'Darwin':
       command = 'open'
     else:
-      raise NotImplementedError(f"Platform '{PLATFORM}' is not supported.")
+      raise NotImplementedError(f"Platform '{platform}' is not supported.")
     return subprocess.run([command, path])
 
   # Returns host OS name.
   # Common values: 'Linux', 'Windows', 'Darwin'.
   def get_platform(self) -> str:
-    return PLATFORM
+    return platform.system()
