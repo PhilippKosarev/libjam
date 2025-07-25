@@ -36,14 +36,9 @@ class Notebook:
     return config_file
 
   # Returns a toml file parsed to a dict.
-  def read_toml(self, config_file: str) -> dict:
-    data = self.read_file(config_file)
+  def read_toml(self, file: str) -> dict:
+    data = self.read_file(file)
     data = tomllib.loads(data)
-    for category in data:
-      for item in data.get(category):
-        path = data.get(category).get(item)
-        if type(path) == str:
-          data[category][item] = drawer.absolute_path(path)
     return data
 
   # Reads INI file and returns its contents in the form of a dict.
