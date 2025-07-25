@@ -62,11 +62,11 @@ class Drawer:
     path = realpath(path)
     return os.path.exists(path)
 
-  # Returns the extension of a given file (a string)
+  # Returns the extension of a given file.
   def get_filetype(self, path: str) -> str:
     if self.is_folder(path):
-      return "folder"
-    basename = self.basename(path)
+      return 'folder'
+    basename = self.get_basename(path)
     filetype = os.path.splitext(basename)[1].removeprefix('.')
     return filetype
 
@@ -197,7 +197,7 @@ class Drawer:
 
   # Returns the parent folder of given file/folder.
   def get_parent(self, path: str) -> str:
-    basename = self.basename(path)
+    basename = self.get_basename(path)
     parent = path.removesuffix(basename)
     parent = parent.removesuffix('/')
     return parent
