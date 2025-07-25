@@ -182,7 +182,7 @@ class Drawer:
 
   # Deletes a given folder.
   def delete_folder(self, folder: str) -> str:
-    if self.is_folder(path):
+    if self.is_folder(folder):
       folder = realpath(folder)
       shutil.rmtree(folder)
     else:
