@@ -7,21 +7,23 @@ typewriter = Typewriter()
 # Processes command line arguments
 class Captain:
 
-  def get_args(self):
+  def get_args(self) -> list:
     args = sys.argv
     args.pop(0)
     return args
 
   # Returns a list of args a function requires.
-  def get_function_args(self, function):
+  def get_function_args(self, function) -> list:
     args = str(signature(function))
     args = args.removeprefix('(').removesuffix(')').replace(' ', '').split(',')
     if 'self' in args:
      args.remove('self')
     return args
 
-  # Returns a generated a help page based on provided inputs
-  def generate_help(self, app: str, description: str, commands: dict, options: dict = None):
+  # Returns a generated a help page based on provided inputs.
+  def generate_help(
+    self, app: str, description: str, commands: dict, options: dict = None
+  ) -> str:
     offset = 2; offset_string = ' ' * offset
     commands_list = []
     for command in commands:
@@ -40,7 +42,6 @@ class Captain:
         options_list.append(f"-{short}, --{long}")
         options_list.append(f"- {option_desc}")
       options_string = typewriter.list_to_columns(options_list, 2, offset)
-
     # Creating the help string
     help_string = ''
     # Adding description
@@ -56,14 +57,17 @@ class Captain:
     if options is not None:
       help_string += f"\n{typewriter.bolden('Options:')}\n"
       help_string += options_string.rstrip()
-
+    # Returning
     return help_string
 
 
-  # Interprets input arguments
-  def interpret(self, app: str, help: str, commands: dict, options: dict = None):
-    # Class vars
-    arguments = self.get_args()
+  # Interprets input arguments.
+  def interpret(
+    self, app: str, help: str, commands: dict, options: dict = None,
+    arguments: list = None,
+  ) -> dict:
+    if arguments is None:
+      arguments = self.get_args()
     chosen_command = None
     self.function = None
     self.arbitrary_args = False
