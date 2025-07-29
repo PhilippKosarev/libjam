@@ -27,7 +27,7 @@ class Clipboard:
   def filter(self, input_list: list, filter_list: list) -> list:
     result_list = []
     for item in input_list:
-      if self.is_string_in_list(filter_list, item) is False:
+      if item not in filter_list:
         result_list.append(item)
     return result_list
 
