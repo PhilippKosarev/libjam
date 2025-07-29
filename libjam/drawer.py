@@ -163,9 +163,9 @@ class Drawer:
 
   # Deletes a given file/folder.
   def delete_path(self, path: str) -> str:
-    if self.is_file(file):
+    if self.is_file(path):
       remove_function = os.remove
-    elif self.is_folder(folder):
+    elif self.is_folder(path):
       remove_function = shutil.rmtree
     path = realpath(path)
     remove_function(path)
