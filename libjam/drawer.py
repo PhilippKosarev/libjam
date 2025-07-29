@@ -20,12 +20,9 @@ joinpath = os.path.join
 
 def realpath(path: str) -> str:
   path_prefixes = ['/', '~']
-  first_char = path[0]
-  if first_char in path_prefixes:
+  if path.startswith('~'):
     path = path.replace('~', HOME)
-    return os.path.normpath(path)
-  else:
-    return path
+  return os.path.normpath(path)
 
 def realpaths(path: list) -> list:
   result_list = []
@@ -163,6 +160,23 @@ class Drawer:
     return outpath(folder + new_filename)
 
   # File removal:
+
+  # Deletes a given file/folder.
+  def delete_path(self, path: str) -> str:
+    if self.is_file(file):
+      remove_function = os.remove
+    elif self.is_folder(folder):
+      remove_function = shutil.rmtree
+    path = realpath(path)
+    remove_function(path)
+    return outpath(path)
+
+  # Deletes given files/folders.
+  def delete_paths(self, paths: list) -> list:
+    return_list = []
+    for path in paths:
+      return_list.append(self.delete_path(path))
+    return return_list
 
   # Deletes a given file.
   def delete_file(self, file: str) -> str:
