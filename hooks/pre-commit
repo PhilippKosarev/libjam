@@ -28,3 +28,20 @@ elif [[ $status != "0" ]]; then
 ${normal}"
   exit $status
 fi
+
+# Checking formatting
+check_command="ruff --config ruff.toml format --check"
+echo "Running '$check_command'."
+$check_command
+status=$?
+echo
+if [[ $status != "0" ]]; then
+  echo "${bold}\
+╭─Commit─Aborted───────────────────────────────────────────────────────╮
+│ Found formatting inconsistencies, please fix them before committing. │
+│ To automatically fix formatting run 'ruff --config ruff.toml format' │
+│ To ignore the errors use '--no-verify'.                              │
+╰──────────────────────────────────────────────────────────────────────╯\
+${normal}"
+  exit $status
+fi
