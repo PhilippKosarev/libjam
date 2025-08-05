@@ -1,14 +1,21 @@
 # Imports
-import os, shutil, pathlib, tempfile, send2trash
-import zipfile, rarfile, patoolib
-import platform, subprocess
+import os
+import shutil
+import pathlib
+import tempfile
+import send2trash
+import zipfile
+import rarfile
+import patoolib
+import platform
+import subprocess
 import math
 
 # Internal functions
 def outpath(path: str or list) -> str or list:
-  if type(path) == str:
+  if type(path) is str:
     return path.replace(os.sep, '/')
-  elif type(path) == list:
+  elif type(path) is list:
     result_list = []
     for item in path:
       result_list.append(item.replace(os.sep, '/'))
@@ -19,7 +26,6 @@ PLATFORM = platform.system()
 joinpath = os.path.join
 
 def realpath(path: str) -> str:
-  path_prefixes = ['/', '~']
   if path.startswith('~'):
     path = path.replace('~', HOME)
   return os.path.normpath(path)
@@ -185,7 +191,7 @@ class Drawer:
       os.remove(file)
       return outpath(file)
     else:
-      raise IsADirectoryError(f"Attempted to delete a folder at '{path}'.")
+      raise IsADirectoryError(f"Attempted to delete a folder at '{file}'.")
 
   # Deletes given files.
   def delete_files(self, files: list) -> list:
@@ -332,7 +338,7 @@ class Drawer:
     if archive_type == '7z':
       try:
         patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
-      except PatoolError:
+      except patoolib.PatoolError:
         raise RuntimeError("It appears that 7Zip is not installed on this system.")
     elif archive_type in ('zip', 'rar'):
       if archive_type == 'zip':

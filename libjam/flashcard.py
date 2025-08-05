@@ -5,7 +5,6 @@ class Flashcard:
     no_choices =  ('no',  'n')
     while True:
       user_input = input(f'{question} [y/n]: ').lower()
-      answer = None
       if user_input in yes_choices:
         return True
       elif user_input in no_choices:

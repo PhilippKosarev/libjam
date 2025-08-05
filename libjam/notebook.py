@@ -1,5 +1,9 @@
 # Imports
-import tomllib, configparser, json, ast, re
+import tomllib
+import configparser
+import json
+import ast
+import re
 from .drawer import Drawer
 
 # Jam classes
@@ -93,7 +97,7 @@ class Notebook:
     for section in contents:
       for var_name in contents.get(section):
         value = contents.get(section).get(var_name)
-        if (section in parser) == False:
+        if section not in parser:
           parser[section] = {}
         parser[section][var_name] = value
     with open(ini_file, 'w') as file:

@@ -63,7 +63,8 @@ class Typewriter:
     if num_of_columns is None:
       terminal_width = shutil.get_terminal_size()[0] - 1
       num_of_columns = int(terminal_width / (column_width + offset))
-      if num_of_columns < 1: num_of_columns = 1
+      if num_of_columns < 1:
+        num_of_columns = 1
     # Creating a list of columns
     columns = []
     iteration = 0

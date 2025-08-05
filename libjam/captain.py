@@ -24,7 +24,8 @@ class Captain:
   def generate_help(
     self, app: str, description: str, commands: dict, options: dict = None
   ) -> str:
-    offset = 2; offset_string = ' ' * offset
+    offset = 2
+    offset_string = ' ' * offset
     commands_list = []
     for command in commands:
       command_desc = commands.get(command).get('description')
@@ -143,7 +144,8 @@ class Captain:
               sys.exit(-1)
             elif len(self.command_args) >= self.required_args:
               s = ''
-              if self.required_args > 1: s = 's'
+              if self.required_args > 1:
+                s = 's'
               print(f"Command '{chosen_command}' requires only {self.required_args} argument{s}.")
               sys.exit(-1)
           self.command_args.append(argument)
