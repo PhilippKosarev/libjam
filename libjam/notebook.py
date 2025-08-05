@@ -9,13 +9,15 @@ from .drawer import Drawer
 # Jam classes
 drawer = Drawer()
 
+
 # Deals with configs and reading/writing files
 class Notebook:
-
   # Reads a text file and returns a string.
   def read_file(self, path: str) -> str:
     if drawer.is_folder(path):
-      raise FileExistsError(f"Attempted to read folder at '{path}' as a text file.")
+      raise FileExistsError(
+        f"Attempted to read folder at '{path}' as a text file."
+      )
     elif drawer.is_file(path) is False:
       raise FileNotFoundError(f"File '{path}' not found.")
     return open(path, 'r').read()
@@ -56,7 +58,7 @@ class Notebook:
     except configparser.DuplicateSectionError:
       if allow_duplicates is True:
         ini_string = open(ini_file, 'r').read()
-        ini_string = re.sub(';.*', '', ini_string) # Removing comments
+        ini_string = re.sub(';.*', '', ini_string)  # Removing comments
         ini_sections = ini_string.replace(' =', '=').replace('= ', '=')
         ini_sections = ini_sections.replace('\n', ';')
         ini_sections = ini_sections.replace('[', '\n[')
@@ -67,7 +69,7 @@ class Notebook:
           section_name = re.sub('];.*', '', section).replace('[', '')
           section_name = section_name.upper()
           ini_dict[section_name] = {}
-          declarations = section.removeprefix(f"[{section_name}];")
+          declarations = section.removeprefix(f'[{section_name}];')
           declarations = declarations.split(';')
           for declaration in declarations:
             if declaration == '':

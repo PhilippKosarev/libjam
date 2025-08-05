@@ -1,6 +1,5 @@
 # Deals with lists and such.
 class Clipboard:
-
   # Returns items present in both given lists.
   def get_duplicates(self, input_list1: list, input_list2: list) -> list:
     result_list = []
@@ -93,7 +92,7 @@ class Clipboard:
     return result_list
 
   # Find & Replace for a list.
-  def replace(self, input_list: list , old_string: str, new_string: str) -> list:
+  def replace(self, input_list: list, old_string: str, new_string: str) -> list:
     result_list = []
     for item in input_list:
       item = item.replace(old_string, new_string)

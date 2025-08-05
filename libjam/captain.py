@@ -2,11 +2,12 @@
 import sys
 from inspect import signature
 from .typewriter import Typewriter
+
 typewriter = Typewriter()
+
 
 # Processes command line arguments
 class Captain:
-
   def get_args(self) -> list:
     args = sys.argv
     args.pop(0)
@@ -17,7 +18,7 @@ class Captain:
     args = str(signature(function))
     args = args.removeprefix('(').removesuffix(')').replace(' ', '').split(',')
     if 'self' in args:
-     args.remove('self')
+      args.remove('self')
     return args
 
   # Returns a generated a help page based on provided inputs.
@@ -29,10 +30,10 @@ class Captain:
     commands_list = []
     for command in commands:
       command_desc = commands.get(command).get('description')
-      commands_list.append(f"{command}")
-      commands_list.append(f"- {command_desc}")
-    commands_list.append("help")
-    commands_list.append("- Prints this page")
+      commands_list.append(f'{command}')
+      commands_list.append(f'- {command_desc}')
+    commands_list.append('help')
+    commands_list.append('- Prints this page')
     commands_string = typewriter.list_to_columns(commands_list, 2, offset)
     if options is not None:
       options_list = []
@@ -40,31 +41,34 @@ class Captain:
         option_desc = options.get(option).get('description')
         long = ', --'.join(options.get(option).get('long'))
         short = ', -'.join(options.get(option).get('short'))
-        options_list.append(f"-{short}, --{long}")
-        options_list.append(f"- {option_desc}")
+        options_list.append(f'-{short}, --{long}')
+        options_list.append(f'- {option_desc}')
       options_string = typewriter.list_to_columns(options_list, 2, offset)
     # Creating the help string
     help_string = ''
     # Adding description
-    help_string += f"{typewriter.bolden('Description:')}\n"
-    help_string += f"{offset_string}{description}\n"
+    help_string += f'{typewriter.bolden("Description:")}\n'
+    help_string += f'{offset_string}{description}\n'
     # Adding synopsys
-    help_string += f"{typewriter.bolden('Synopsis:')}\n"
-    help_string += f"{offset_string}{app} [OPTIONS] [COMMAND]\n"
+    help_string += f'{typewriter.bolden("Synopsis:")}\n'
+    help_string += f'{offset_string}{app} [OPTIONS] [COMMAND]\n'
     # Adding commands
-    help_string += f"{typewriter.bolden('Commands:')}\n"
+    help_string += f'{typewriter.bolden("Commands:")}\n'
     help_string += commands_string.rstrip()
     # Adding options
     if options is not None:
-      help_string += f"\n{typewriter.bolden('Options:')}\n"
+      help_string += f'\n{typewriter.bolden("Options:")}\n'
       help_string += options_string.rstrip()
     # Returning
     return help_string
 
-
   # Interprets input arguments.
   def interpret(
-    self, app: str, help: str, commands: dict, options: dict = None,
+    self,
+    app: str,
+    help: str,
+    commands: dict,
+    options: dict = None,
     arguments: list = None,
   ) -> dict:
     if arguments is None:
@@ -81,13 +85,13 @@ class Captain:
         options[option]['enabled'] = False
     # Parsing arguments
     for argument in arguments:
-      if argument.startswith("-"):
+      if argument.startswith('-'):
         if options is not None:
           self.arg_found = False
 
           # Long options
-          if argument.startswith("--"):
-            argument = argument.removeprefix("--")
+          if argument.startswith('--'):
+            argument = argument.removeprefix('--')
             if argument == '':
               print(f"Invalid option '--'. Try {app} help")
               sys.exit(-1)
@@ -102,7 +106,7 @@ class Captain:
 
           # Short options
           else:
-            argument = argument.removeprefix("-")
+            argument = argument.removeprefix('-')
             if argument == '':
               print(f"Invalid option '-'. Try {app} help")
               sys.exit(-1)
@@ -146,23 +150,29 @@ class Captain:
               s = ''
               if self.required_args > 1:
                 s = 's'
-              print(f"Command '{chosen_command}' requires only {self.required_args} argument{s}.")
+              print(
+                f"Command '{chosen_command}' requires only {self.required_args} argument{s}."
+              )
               sys.exit(-1)
           self.command_args.append(argument)
-    if self.arbitrary_args is False and self.required_args > len(self.command_args):
-      print(f"Command '{chosen_command}' requires {self.required_args} arguments.")
+    if self.arbitrary_args is False and self.required_args > len(
+      self.command_args
+    ):
+      print(
+        f"Command '{chosen_command}' requires {self.required_args} arguments."
+      )
       sys.exit(-1)
 
     # Checking if command is specified
     if chosen_command is None:
-        print(f"No command specified. Try {app} help")
-        sys.exit(0)
+      print(f'No command specified. Try {app} help')
+      sys.exit(0)
 
     function = commands.get(chosen_command).get('function')
     function_name = function.__name__
     function_params = ''
     for item in self.command_args:
       function_params += f"'{item}', "
-    function = f"{function_name}({function_params})"
+    function = f'{function_name}({function_params})'
 
     return {'function': function, 'options': options}

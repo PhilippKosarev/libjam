@@ -11,6 +11,7 @@ import platform
 import subprocess
 import math
 
+
 # Internal functions
 def outpath(path: str or list) -> str or list:
   if type(path) is str:
@@ -21,14 +22,17 @@ def outpath(path: str or list) -> str or list:
       result_list.append(item.replace(os.sep, '/'))
     return result_list
 
+
 HOME = outpath(str(pathlib.Path.home()))
 PLATFORM = platform.system()
 joinpath = os.path.join
+
 
 def realpath(path: str) -> str:
   if path.startswith('~'):
     path = path.replace('~', HOME)
   return os.path.normpath(path)
+
 
 def realpaths(path: list) -> list:
   result_list = []
@@ -36,9 +40,9 @@ def realpaths(path: list) -> list:
     result_list.append(realpath(item))
   return result_list
 
+
 # Deals with files.
 class Drawer:
-
   # General:
 
   # Converts the given path to an absolute path.
@@ -229,7 +233,7 @@ class Drawer:
   def trash_paths(self, paths: list) -> list:
     return_list = []
     for path in paths:
-      return_list.append( self.trash_path(path) )
+      return_list.append(self.trash_path(path))
     return return_list
 
   # Path parts:
@@ -240,14 +244,14 @@ class Drawer:
     if self.is_folder(path):
       path = os.path.basename(os.path.normpath(path))
     else:
-      path = path.rsplit(os.sep,1)[-1]
+      path = path.rsplit(os.sep, 1)[-1]
     return outpath(path)
 
   # Given a list of paths, returns a list of their basenames.
   def get_basenames(self, paths: list) -> list:
     return_list = []
     for path in paths:
-      return_list.append( self.get_basename(path) )
+      return_list.append(self.get_basename(path))
     return return_list
 
   # Returns the parent folder of given file/folder.
@@ -260,7 +264,7 @@ class Drawer:
   def get_parents(self, paths: list) -> list:
     return_list = []
     for path in paths:
-      return_list.append( self.get_parent(path) )
+      return_list.append(self.get_parent(path))
     return return_list
 
   # Path parameters:
@@ -309,7 +313,7 @@ class Drawer:
       ('qb', 'quettabytes'),
     ]
     filesize_order = math.floor(math.log(filesize, 1000))
-    filesize = filesize / (1000 ** filesize_order)
+    filesize = filesize / (1000**filesize_order)
     return (filesize,) + filesize_orders[filesize_order]
 
   # Archive extraction:
@@ -327,19 +331,28 @@ class Drawer:
   # def progress_function(done: int, total: int):
   #   print(f"Extracted {done} files out of {total} files total")
   def extract_archive(
-    self, archive: str, extract_location: str, progress_function=None,
+    self,
+    archive: str,
+    extract_location: str,
+    progress_function=None,
   ) -> str:
     if not self.is_archive_supported(archive):
-      raise NotImplementedError(f"Extracting archive at '{archive}' is not supported.")
+      raise NotImplementedError(
+        f"Extracting archive at '{archive}' is not supported."
+      )
     archive_type = self.get_filetype(archive)
-    archive_basename = self.get_basename(archive).removesuffix(f".{archive_type}")
-    extract_location = f"{extract_location}/{archive_basename}"
+    archive_basename = self.get_basename(archive).removesuffix(
+      f'.{archive_type}'
+    )
+    extract_location = f'{extract_location}/{archive_basename}'
     archive, extract_location = realpath(archive), realpath(extract_location)
     if archive_type == '7z':
       try:
         patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
       except patoolib.PatoolError:
-        raise RuntimeError("It appears that 7Zip is not installed on this system.")
+        raise RuntimeError(
+          'It appears that 7Zip is not installed on this system.'
+        )
     elif archive_type in ('zip', 'rar'):
       if archive_type == 'zip':
         archive_object = zipfile.ZipFile(archive)

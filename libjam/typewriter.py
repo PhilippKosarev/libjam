@@ -1,6 +1,7 @@
 # Imports
 import shutil
 
+
 # Responsible for formatting, modification and printing of strings
 class Typewriter:
   # Shorthand vars
@@ -23,7 +24,7 @@ class Typewriter:
   # If the specified number of lines is 0 then the current line will be erased.
   def clear_lines(self, lines: int):
     if lines == 0:
-      print("\r" + self.CLEAR, end='')
+      print('\r' + self.CLEAR, end='')
       return
     for line in range(lines):
       print(self.CLEAR, end=self.CURSOR_UP)
@@ -37,13 +38,13 @@ class Typewriter:
   # Prints on the same line
   def print_status(self, status: str):
     self.clear_lines(0)
-    print(f" {status}", end='\r')
+    print(f' {status}', end='\r')
 
   # Clears the current line and prints the progress bar on the same line.
   def print_progress(self, status: str, current: int, total: int):
     width = 25
-    progress_float = (current / total)
-    percent = int(round((progress_float* 100), 0))
+    progress_float = current / total
+    percent = int(round((progress_float * 100), 0))
     percent_string = str(percent)
     if percent < 100:
       percent_string = ' ' + percent_string
@@ -51,12 +52,17 @@ class Typewriter:
       percent_string = ' ' + percent_string
     progress_width = int(progress_float * width)
     progress_bar = '=' * progress_width + ' ' * (width - progress_width)
-    self.print_status(f"{percent_string}% [{progress_bar}] {status}: {current}/{total}")
+    self.print_status(
+      f'{percent_string}% [{progress_bar}] {status}: {current}/{total}'
+    )
 
   # Given a list, it returns a string with the elements of the given list
   # arranged in in columns.
   def list_to_columns(
-    self, text_list: list, num_of_columns = None, offset = 2,
+    self,
+    text_list: list,
+    num_of_columns=None,
+    offset=2,
   ) -> str:
     column_width = len(max(text_list, key=len))
     # Automatically set num of columns if not specified otherwise
