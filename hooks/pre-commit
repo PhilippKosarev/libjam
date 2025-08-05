@@ -1,0 +1,18 @@
+#!/usr/bin/sh
+
+# Text styles
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+# Checking potential errors
+ruff --config ruff.toml check
+status=$?
+if [[ $status != "0" ]]; then
+  echo -e "${bold}
+╭─Commit─Aborted─────────────────────────────────────────────╮
+│ Found potential errors, please fix them before committing. │
+│ To ignore the errors use '--no-verify'.                    │
+╰────────────────────────────────────────────────────────────╯
+${normal}"
+  exit $status
+fi
