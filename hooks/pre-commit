@@ -4,14 +4,13 @@
 bold=$(tput bold)
 normal=$(tput sgr0)
 
-# Checking potential errors
+# Checking for potential errors
 check_command="ruff --config ruff.toml check"
 echo "Running '$check_command'"
 $check_command
 status=$?
-echo
 if [[ $status == "127" ]]; then
-    echo "${bold}\
+  echo "${bold}
 ╭─Commit─Aborted───────────────────────────────────────────────╮
 │ Looks like you don't have ruff installed. This project uses  │
 │ ruff to check formatting and look for potential errors.      │
@@ -20,7 +19,7 @@ if [[ $status == "127" ]]; then
 ${normal}"
   exit $status
 elif [[ $status != "0" ]]; then
-  echo "${bold}\
+  echo "${bold}
 ╭─Commit─Aborted─────────────────────────────────────────────╮
 │ Found potential errors, please fix them before committing. │
 │ To ignore the errors use '--no-verify'.                    │
@@ -34,9 +33,8 @@ check_command="ruff --config ruff.toml format --check"
 echo "Running '$check_command'."
 $check_command
 status=$?
-echo
 if [[ $status != "0" ]]; then
-  echo "${bold}\
+  echo "${bold}
 ╭─Commit─Aborted───────────────────────────────────────────────────────╮
 │ Found formatting inconsistencies, please fix them before committing. │
 │ To automatically fix formatting run 'ruff --config ruff.toml format' │
