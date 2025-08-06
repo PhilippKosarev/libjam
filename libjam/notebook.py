@@ -55,7 +55,10 @@ class Notebook:
     parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
     try:
       parser.read_string(data)
-    except configparser.DuplicateSectionError:
+    except (
+      configparser.DuplicateSectionError,
+      configparser.DuplicateOptionError,
+    ):
       if allow_duplicates is True:
         ini_string = open(ini_file, 'r').read()
         ini_string = re.sub(';.*', '', ini_string)  # Removing comments
