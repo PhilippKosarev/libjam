@@ -46,12 +46,16 @@ class CLI:
 app = "example"
 description = "An example app for the libjam library"
 commands = {
-  'print':     {'function': CLI.hello,
-  'description': 'Prints given string'},
+  'print': {
+    'function': CLI.hello,
+    'description': 'Prints given string',
+  },
 }
 options = {
- 'world': {'long': ['world'], 'short': ['w'],
- 'description': 'Appends \'world\' after printing given input'},
+  'world': {
+    'long': ['world'], 'short': ['w'],
+    'description': 'Appends \'world\' after printing given input',
+  },
 }
 
 # Generating help
