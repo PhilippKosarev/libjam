@@ -159,6 +159,8 @@ class Drawer:
       shutil.copy(source, destination)
     elif self.is_folder(source):
       shutil.copytree(source, destination, dirs_exist_ok=overwrite)
+    else:
+      raise FileNotFoundError(f"File '{source}' does not exist.")
     return outpath(destination)
 
   # Renames a given file in a given path.
