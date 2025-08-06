@@ -334,11 +334,11 @@ class Drawer:
     self,
     archive: str,
     extract_location: str,
-    progress_function=None,
+    progress_function: callable = None,
   ) -> str:
     if not self.is_archive_supported(archive):
       raise NotImplementedError(
-        f"Extracting archive at '{archive}' is not supported."
+        f"Attempted extraction of archive at '{archive}'."
       )
     archive_type = self.get_filetype(archive)
     archive_basename = self.get_basename(archive).removesuffix(
@@ -349,7 +349,7 @@ class Drawer:
     if archive_type == '7z':
       try:
         patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
-      except patoolib.PatoolError:
+      except patoolib.util.PatoolError:
         raise RuntimeError(
           'It appears that 7Zip is not installed on this system.'
         )
