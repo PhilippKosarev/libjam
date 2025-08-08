@@ -166,10 +166,11 @@ class Drawer:
   # Renames a given file in a given path.
   def rename(self, folder: str, old_filename: str, new_filename: str) -> str:
     if not folder.endswith('/'):
-      folder = folder = '/'
-    folder = realpath(folder)
-    os.rename(folder + old_filename, folder + new_filename)
-    return outpath(folder + new_filename)
+      folder = folder + '/'
+    old_file, new_file = folder + old_filename, folder + new_filename
+    old_file, new_file = realpath(old_file), realpath(new_file)
+    os.rename(old_file, new_file)
+    return outpath(new_file)
 
   # File removal:
 
@@ -371,15 +372,16 @@ class Drawer:
     return outpath(extract_location)
 
   # Same as xdg-open, but platform-independent.
-  def open(self, path: str) -> subprocess.CompletedProcess:
-    path = realpath(path)
+  def open(self, argument: str, is_path: bool = True) -> int:
+    if is_path:
+      argument = realpath(argument)
     open_by_platform = {
       'Linux': 'xdg-open',
       'Windows': 'start',
       'Darwin': 'open',
     }
     if PLATFORM in open_by_platform:
-      command = open_by_platform.get(PLATFORM)
+      open_command = open_by_platform.get(PLATFORM)
     else:
       raise NotImplementedError(f"Platform '{platform}' is not supported.")
-    return subprocess.run([command, path])
+    return subprocess.run([open_command, argument], check=True).returncode
