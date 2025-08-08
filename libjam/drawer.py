@@ -1,9 +1,9 @@
 # Imports
 import os
+import sys
 import shutil
 import pathlib
 import tempfile
-import send2trash
 import zipfile
 import rarfile
 import patoolib
@@ -225,11 +225,23 @@ class Drawer:
 
   # Sends given file/folder to trash.
   def trash_path(self, path: str) -> str:
+    # Need to check the file ourselves because send2trash raises an OSError
+    # instead of a FileNotFoundError
+    if not self.exists(path):
+      raise FileNotFoundError(f"File at '{path}' does not exist.")
+    # Send2Trash can take a long time to import on systems that use GIO due
+    # to how long it takes to import GObject and GIO, so doing it on-demand
+    # is generally better
+    if 'send2trash' not in sys.modules:
+      import send2trash
+    send2trash = sys.modules.get('send2trash')
     path = realpath(path)
     try:
-      return send2trash.send2trash(path)
-    except FileNotFoundError:
-      raise FileNotFoundError(f"Error sending '{path}' to trash.")
+      send2trash.send2trash(path)
+    except send2trash.exceptions.TrashPermissionError:
+      raise PermissionError(
+        f"Attempted to trash path '{path}' with insufficient permissions."
+      )
     return outpath(path)
 
   # Sends given files/folders to trash.
