@@ -4,9 +4,10 @@ import configparser
 import json
 import ast
 import re
+
+# Internal imports
 from .drawer import Drawer
 
-# Jam classes
 drawer = Drawer()
 
 

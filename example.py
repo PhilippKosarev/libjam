@@ -1,37 +1,33 @@
 #!/usr/bin/env python3
 
 # Imports
-import sys
 from libjam import captain
 
-class CLI:
-  def hello(self, text):
-    print(text)
-    if options.get('world').get('enabled'):
-      print('world!')
+# Defining function
+def my_print(args: list, options: dict):
+  if len(args) == 0:
+    print("Command 'print' requires at least 1 argument.")
+    return
+  text = ' '.join(args)
+  if options.get('world'):
+    text += ' world!'
+  print(text)
 
 # Setting commands and options
-app = "example"
-description = "An example app for the libjam library"
+description = "An example CLI for the libjam library."
 commands = {
   'print': {
-    'function': CLI.hello,
-    'description': 'Prints given string',
+    'function': my_print,
+    'description': 'Prints the given input.',
   },
 }
 options = {
   'world': {
     'long': ['world'], 'short': ['w'],
-    'description': 'Appends \'world\' after printing given input',
+    'description': "Appends ' world!' to the end of the string.",
   },
 }
 
-# Generating help
-help = captain.generate_help(app, description, commands, options)
-# Interpreting user input
-interpretation = captain.interpret(app, help, commands, options)
-# Getting parsed output
-function = interpretation.get('function')
-options = interpretation.get('options')
-# Executing function
-exec(f"CLI().{function}")
+# Running
+function, arguments, options = captain.sail(description, commands, options)
+function(arguments, options)

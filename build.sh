@@ -12,17 +12,10 @@ function Ask {
   done
 }
 
-function Build {
-  echo "Deleting 'dist' directory..."
-  rm ./dist -r
-  echo "Building..."
-  python3 -m build
-}
+echo "Deleting 'dist' directory..."
+rm ./dist -r
+echo "Building..."
+python3 -m build
 
-function Publish {
-  python3 -m twine upload --repository pypi dist/*
-}
-
-# Running
-Build
-Ask "Publish new version to PyPi?" && Publish
+# Publish command:
+# python3 -m twine upload --repository pypi dist/*

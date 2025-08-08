@@ -6,65 +6,83 @@ libjam is available on [PyPI](https://pypi.org/project/libjam/), and can be inst
 ```
 pip install libjam
 ```
+To install the latest bleeding edge:
+```
+pip install git+https://github.com/philippkosarev/libjam.git
+```
 
 ## Modules
-libjam consists of of 6 modules:
 
 ### Captain
-Responsible for handling command-line arguments.
+Makes creating command line interfaces easy.
 
 ### Drawer
-Responsible for file operations.
+Responsible for file operations. Accepts the '/' as the file separator, regardless the OS.
 
 ### Typewriter
-Responsible for transforming and printing text.
+Transforms text and prints to the terminal.
 
 ### Clipboard
-Responsible for working with lists.
+Provides some useful and commonly used list operations.
 
 ### Notebook
-Responsible for configuration.
+Simplifies and standardises reading and writing configuration files.
 
 ### Flashcard
-Responsible for getting user input from the command line.
+Useful for getting user input from the command line.
 
-## Example project
+## Example CLI project
+example.py:
 ```python
-#!/usr/bin/env python3
-
 # Imports
-import sys
 from libjam import captain
 
-class CLI:
-  def hello(self, text):
-    print(text)
-    if options.get('world').get('enabled'):
-      print('world!')
+# Defining function
+def my_print(args: list, options: dict):
+  if len(args) == 0:
+    print("Command 'print' requires at least 1 argument.")
+    return
+  text = ' '.join(args)
+  if options.get('world'):
+    text += ' world!'
+  print(text)
 
 # Setting commands and options
-app = "example"
-description = "An example app for the libjam library"
+description = "An example CLI for the libjam library."
 commands = {
   'print': {
-    'function': CLI.hello,
-    'description': 'Prints given string',
+    'function': my_print,
+    'description': 'Prints the given input.',
   },
 }
 options = {
   'world': {
     'long': ['world'], 'short': ['w'],
-    'description': 'Appends \'world\' after printing given input',
+    'description': "Appends ' world!' to the end of the string.",
   },
 }
 
-# Generating help
-help = captain.generate_help(app, description, commands, options)
-# Interpreting user input
-interpretation = captain.interpret(app, help, commands, options)
-# Getting parsed output
-function = interpretation.get('function')
-options = interpretation.get('options')
-# Executing function
-exec(f"CLI().{function}")
+# Running
+function, arguments, options = captain.sail(description, commands, options)
+function(arguments, options)
+```
+
+Output:
+```
+$ ./example.py
+No command specified. Try example.py help
+$ ./example.py print Hello
+Hello
+$ ./example.py print Hello --world
+Hello world!
+$ ./example.py help
+Synopsis:
+  example.py [OPTIONS] [COMMAND]
+Description:
+  An example app for the libjam library.
+Commands:
+  print - Prints the given input.
+  help  - Prints this page.
+Options:
+  -w, --world - Appends ' world!' to the end of the string.
 ```
