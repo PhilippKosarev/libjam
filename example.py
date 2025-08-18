@@ -5,26 +5,24 @@ from libjam import captain
 
 # Defining function
 def my_print(args: list, options: dict):
-  if len(args) == 0:
-    print("Command 'print' requires at least 1 argument.")
-    return
   text = ' '.join(args)
   if options.get('world'):
     text += ' world!'
   print(text)
 
 # Setting commands and options
-description = "An example CLI for the libjam library."
+description = 'An example CLI for the libjam library'
 commands = {
   'print': {
     'function': my_print,
-    'description': 'Prints the given input.',
+    'description': 'Prints the given input',
+    'arguments': ['*text'],
   },
 }
 options = {
   'world': {
     'long': ['world'], 'short': ['w'],
-    'description': "Appends ' world!' to the end of the string.",
+    'description': "Appends ' world!' to the end of the string",
   },
 }
 

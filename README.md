@@ -39,26 +39,24 @@ from libjam import captain
 
 # Defining function
 def my_print(args: list, options: dict):
-  if len(args) == 0:
-    print("Command 'print' requires at least 1 argument.")
-    return
   text = ' '.join(args)
   if options.get('world'):
     text += ' world!'
   print(text)
 
 # Setting commands and options
-description = "An example CLI for the libjam library."
+description = 'An example CLI for the libjam library'
 commands = {
   'print': {
     'function': my_print,
-    'description': 'Prints the given input.',
+    'description': 'Prints the given input',
+    'arguments': ['*text'],
   },
 }
 options = {
   'world': {
     'long': ['world'], 'short': ['w'],
-    'description': "Appends ' world!' to the end of the string.",
+    'description': "Appends ' world!' to the end of the string",
   },
 }
 
@@ -70,7 +68,8 @@ function(arguments, options)
 Output:
 ```
 $ ./example.py
-No command specified. Try example.py help
+No command specified.
+Try 'example.py --help' for more information.
 $ ./example.py print Hello
 Hello
 $ ./example.py print Hello --world
@@ -79,10 +78,10 @@ $ ./example.py help
 Synopsis:
   example.py [OPTIONS] [COMMAND]
 Description:
-  An example app for the libjam library.
+  An example CLI for the libjam library.
 Commands:
   print - Prints the given input.
-  help  - Prints this page.
 Options:
   -w, --world - Appends ' world!' to the end of the string.
+  -h, --help  - Prints help.
 ```
