@@ -2,17 +2,21 @@
 import os
 import sys
 import shutil
-import pathlib
 import tempfile
 import zipfile
 import rarfile
-import patoolib
+import py7zr
+import math
 import platform
 import subprocess
-import math
 
 
 # Internal functions
+def realpath(path: str) -> str:
+  path = os.path.expanduser(path)
+  return os.path.normpath(path)
+
+
 def outpath(path: str or list) -> str or list:
   if type(path) is str:
     return path.replace(os.sep, '/')
@@ -23,15 +27,8 @@ def outpath(path: str or list) -> str or list:
     return result_list
 
 
-HOME = outpath(str(pathlib.Path.home()))
 PLATFORM = platform.system()
 joinpath = os.path.join
-
-
-def realpath(path: str) -> str:
-  if path.startswith('~'):
-    path = path.replace('~', HOME)
-  return os.path.normpath(path)
 
 
 def realpaths(path: list) -> list:
@@ -54,7 +51,7 @@ class Drawer:
 
   # Returns the user's home folder.
   def get_home(self) -> str:
-    return outpath(HOME)
+    return outpath(os.path.expanduser('~'))
 
   # Returns the system's temporary folder.
   def get_temp(self) -> str:
@@ -351,36 +348,37 @@ class Drawer:
     extract_location: str,
     progress_function: callable = None,
   ) -> str:
-    if not self.is_archive_supported(archive):
-      raise NotImplementedError(
-        f"Attempted extraction of archive at '{archive}'."
-      )
     archive_type = self.get_filetype(archive)
     archive_basename = self.get_basename(archive).removesuffix(
       f'.{archive_type}'
     )
     extract_location = f'{extract_location}/{archive_basename}'
     archive, extract_location = realpath(archive), realpath(extract_location)
-    if archive_type == '7z':
-      try:
-        patoolib.extract_archive(archive, outdir=extract_location, verbosity=-1)
-      except patoolib.util.PatoolError:
-        raise RuntimeError(
-          'It appears that 7Zip is not installed on this system.'
-        )
-    elif archive_type in ('zip', 'rar'):
-      if archive_type == 'zip':
-        archive_object = zipfile.ZipFile(archive)
-      elif archive_type == 'rar':
-        archive_object = rarfile.RarFile(archive)
-      archived_files = archive_object.namelist()
-      to_extract = len(archived_files)
+    archive_classes = {
+      'zip': zipfile.ZipFile,
+      'rar': rarfile.RarFile,
+      '7z': py7zr.SevenZipFile,
+    }
+    archive_class = archive_classes.get(archive_type)
+    archive_object = archive_class(archive)
+    archived_files = archive_object.namelist()
+    to_extract = len(archived_files)
+    if archive_type in ('zip', 'rar'):
       extracted = 0
       for archived_file in archived_files:
         archive_object.extract(archived_file, path=extract_location)
         extracted += 1
         if progress_function is not None:
           progress_function(extracted, to_extract)
+    elif archive_type == '7z':
+      seven_zip_callbacks = SevenZipCallbacks(to_extract, progress_function)
+      archive_object.extract(
+        extract_location, recursive=True, callback=seven_zip_callbacks
+      )
+    else:
+      raise NotImplementedError(
+        f"Archive type '{archive_type}' is not supported."
+      )
     return outpath(extract_location)
 
   # Same as xdg-open, but platform-independent.
@@ -392,8 +390,35 @@ class Drawer:
       'Windows': 'start',
       'Darwin': 'open',
     }
-    if PLATFORM in open_by_platform:
-      open_command = open_by_platform.get(PLATFORM)
-    else:
+    if PLATFORM not in open_by_platform:
       raise NotImplementedError(f"Platform '{platform}' is not supported.")
-    return subprocess.run([open_command, argument], check=True).returncode
+    open_command = open_by_platform.get(PLATFORM)
+    process = subprocess.run([open_command, argument], check=True)
+    return process.returncode
+
+
+class SevenZipCallbacks(py7zr.callbacks.ExtractCallback):
+  def __init__(self, to_extract: int, progress_function: callable = None):
+    self.extracted = 0
+    self.to_extract = to_extract
+    self.progress_function = progress_function
+
+  def report_start_preparation(self):
+    pass
+
+  def report_start(self, file, size):
+    pass
+
+  def report_end(self, file, size):
+    self.extracted += 1
+    if self.progress_function is not None:
+      self.progress_function(self.extracted, self.to_extract)
+
+  def report_postprocess(self):
+    pass
+
+  def report_update(self, size):
+    pass
+
+  def report_warning(self, message):
+    pass
