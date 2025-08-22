@@ -26,9 +26,7 @@ license = "GPL-2.0"
 license-files = ["LICEN[CS]E*"]
 
 dependencies = [
-  "patool >= 4.0.0",
   "Send2Trash >= 1.8.0",
-  "psutil >= 7.0.0",
   "rarfile >= 4.0",
   "py7zr >= 1.0.0",
 ]
