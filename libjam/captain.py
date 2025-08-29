@@ -238,6 +238,9 @@ class Captain:
     commands: dict,
     options: dict = None,
   ) -> tuple:
+    no_options = options is None
+    if no_options:
+      options = {}
     # Adding help to options
     options['help'] = {
       'long': ['help'],
@@ -275,10 +278,13 @@ Try '{script} --help' for more information."""
         helper.print_command_help(script, command, command_info)
         sys.exit(0)
     command_args = process_command_arguments(
-      script, command, command_info, command_args
+      script,
+      command,
+      command_info,
+      command_args,
     )
     command_function = command_info.get('function')
     return_tuple = (command_function, command_args)
-    if processed_options is not None:
+    if not no_options:
       return_tuple += (processed_options,)
     return return_tuple
