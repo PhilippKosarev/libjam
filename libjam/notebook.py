@@ -2,7 +2,6 @@
 import tomllib
 import configparser
 import json
-import ast
 import re
 
 # Internal imports
@@ -13,16 +12,6 @@ drawer = Drawer()
 
 # Deals with configs and reading/writing files
 class Notebook:
-  # Reads a text file and returns a string.
-  def read_file(self, path: str) -> str:
-    if drawer.is_folder(path):
-      raise FileExistsError(
-        f"Attempted to read folder at '{path}' as a text file."
-      )
-    elif drawer.is_file(path) is False:
-      raise FileNotFoundError(f"File '{path}' not found.")
-    return open(path, 'r').read()
-
   # Writes a string of text to a given, already existing, file
   def write_file(self, path: str, contents: str):
     if drawer.is_file(path) is False:
@@ -31,20 +20,21 @@ class Notebook:
 
   # Checking if config exists, and creating one if it does not
   def check_config(self, config_template_file: str, config_file: str):
-    config_template = self.read_file(config_template_file)
+    # Checking folder
     config_folder = drawer.get_parent(config_file)
-    if drawer.is_folder(config_folder) is False:
+    if not drawer.is_folder(config_folder):
       drawer.make_folder(config_folder)
-    if drawer.is_file(config_file) is False:
+    # Checking file
+    if not drawer.is_file(config_file):
       drawer.make_file(config_file)
-      with open(config_file, 'w') as config:
-        config.write(config_template)
-      print(f"Created configuration file in '{config_folder}'.")
+      config_template = drawer.read_file(config_template_file)
+      drawer.write_file(config_template, config_file)
+    # Returning path
     return config_file
 
   # Returns a toml file parsed to a dict.
   def read_toml(self, file: str) -> dict:
-    data = self.read_file(file)
+    data = drawer.read_file(file)
     data = tomllib.loads(data)
     return data
 
@@ -52,7 +42,7 @@ class Notebook:
   # allow_duplicates is only to be used as a last resort due to the performance
   # impact and inaccuracy in results.
   def read_ini(self, ini_file: str, allow_duplicates=False) -> dict:
-    data = self.read_file(ini_file)
+    data = drawer.read_file(ini_file)
     parser = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
     try:
       parser.read_string(data)
@@ -111,13 +101,7 @@ class Notebook:
 
   # Reads a given json file as a dictionary.
   def read_json(self, json_file: str) -> dict:
-    json_string = self.read_file(json_file)
+    json_string = drawer.read_file(json_file)
     json_string = json_string.replace('null', 'None')
-    # Trying the sane method
-    try:
-      data = json.loads(json_string)
-    # Exception in case json contains multiline values
-    except json.decoder.JSONDecodeError:
-      json_string = ' '.join(json_string.split())
-      data = ast.literal_eval(json_string)
+    data = json.loads(json_string, strict=False)
     return data
