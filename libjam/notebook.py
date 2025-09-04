@@ -12,12 +12,6 @@ drawer = Drawer()
 
 # Deals with configs and reading/writing files
 class Notebook:
-  # Writes a string of text to a given, already existing, file
-  def write_file(self, path: str, contents: str):
-    if drawer.is_file(path) is False:
-      raise FileNotFoundError(f"Attempted to write file at '{path}'.")
-    return open(path, 'w').write(contents)
-
   # Checking if config exists, and creating one if it does not
   def check_config(self, config_template_file: str, config_file: str):
     # Checking folder
