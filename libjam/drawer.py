@@ -11,10 +11,22 @@ import platform
 import subprocess
 
 
-# Internal functions
+# Shorthand vars
+PLATFORM = platform.system()
+joinpath = os.path.join
+
+
+# Helper functions
 def realpath(path: str) -> str:
   path = os.path.expanduser(path)
   return os.path.normpath(path)
+
+
+def realpaths(path: list) -> list:
+  result_list = []
+  for item in path:
+    result_list.append(realpath(item))
+  return result_list
 
 
 def outpath(path: str or list) -> str or list:
@@ -27,27 +39,28 @@ def outpath(path: str or list) -> str or list:
     return result_list
 
 
-PLATFORM = platform.system()
-joinpath = os.path.join
-
-
-def realpaths(path: list) -> list:
-  result_list = []
-  for item in path:
-    result_list.append(realpath(item))
-  return result_list
-
-
 # Deals with files.
 class Drawer:
   # General:
 
   # Converts the given path to an absolute path.
-  def absolute_path(self, path) -> str:
+  def absolute_path(self, path: str) -> str:
     path = realpath(path)
     return outpath(path)
 
-  # Useful variables:
+  # Reads a given file as a string.
+  def read_file(self, path: str) -> str:
+    path = realpath(path)
+    return open(path, 'r').read()
+
+  # Writes a given string to a file.
+  def write_file(self, text: str, path: str) -> str:
+    path = realpath(path)
+    with open(path, 'w') as file:
+      file.write(text)
+    return outpath(path)
+
+  # Useful variable getters:
 
   # Returns the user's home folder.
   def get_home(self) -> str:
@@ -324,8 +337,11 @@ class Drawer:
       ('rb', 'ronnabytes'),
       ('qb', 'quettabytes'),
     ]
-    filesize_order = math.floor(math.log(filesize, 1000))
-    filesize = filesize / (1000**filesize_order)
+    if filesize > 0:
+      filesize_order = math.floor(math.log(filesize, 1000))
+      filesize = filesize / (1000**filesize_order)
+    else:
+      filesize_order = 0
     return (filesize,) + filesize_orders[filesize_order]
 
   # Archive extraction:
