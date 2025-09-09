@@ -1,18 +1,71 @@
 # Imports
+from enum import Enum
 import shutil
+
+# Shorthand vars
+CLEAR = '\x1b[2K'
+CURSOR_UP = '\033[1A'
+
+
+# Helper functions
+def escape_seq(text: str):
+  return f'\033[{text}m'
 
 
 # Responsible for formatting, modification and printing of strings.
 class Typewriter:
-  # Shorthand vars
-  BOLD = '\033[1m'
-  NORMAL = '\033[0m'
-  CLEAR = '\x1b[2K'
-  CURSOR_UP = '\033[1A'
+  class Styles(Enum):
+    RESET = escape_seq(0)
+    INVERT = escape_seq(7)
+    BOLD = escape_seq(1)
+    UNDERLINE = escape_seq(4)
+    OVERLINE = escape_seq(53)
+    BLINKING = escape_seq(5)
+    HIDDEN = escape_seq(8)
+    THROUGHLINE = escape_seq(9)
 
-  # Gets a string, makes it bold, returns the string.
-  def bolden(self, *args):
-    args = [f'{self.BOLD}{text}{self.NORMAL}' for text in args]
+  class Colours(Enum):
+    DEFAULT = escape_seq(39)
+    WHITE = escape_seq(37)
+    BLACK = escape_seq(30)
+    RED = escape_seq(31)
+    GREEN = escape_seq(32)
+    BLUE = escape_seq(34)
+    MAGENTA = escape_seq(35)
+    YELLOW = escape_seq(33)
+    CYAN = escape_seq(36)
+    BRIGHT_WHITE = escape_seq(97)
+    BRIGHT_BLACK = escape_seq(90)
+    BRIGHT_RED = escape_seq(91)
+    BRIGHT_GREEN = escape_seq(92)
+    BRIGHT_BLUE = escape_seq(94)
+    BRIGHT_MAGENTA = escape_seq(95)
+    BRIGHT_YELLOW = escape_seq(93)
+    BRIGHT_CYAN = escape_seq(96)
+
+  class BackgroundColours(Enum):
+    DEFAULT = escape_seq(49)
+    WHITE = escape_seq(47)
+    BLACK = escape_seq(40)
+    RED = escape_seq(41)
+    GREEN = escape_seq(42)
+    BLUE = escape_seq(44)
+    MAGENTA = escape_seq(45)
+    YELLOW = escape_seq(43)
+    CYAN = escape_seq(46)
+    BRIGHT_WHITE = escape_seq(107)
+    BRIGHT_BLACK = escape_seq(100)
+    BRIGHT_RED = escape_seq(101)
+    BRIGHT_GREEN = escape_seq(102)
+    BRIGHT_BLUE = escape_seq(104)
+    BRIGHT_MAGENTA = escape_seq(105)
+    BRIGHT_YELLOW = escape_seq(103)
+    BRIGHT_CYAN = escape_seq(106)
+
+  # Applies a specified style to a string(s).
+  def stylise(self, style: Enum, *args):
+    reset = self.Styles.RESET.value
+    args = [f'{style.value}{text}{reset}' for text in args]
     n_args = len(args)
     if n_args == 0:
       return ''
@@ -20,6 +73,14 @@ class Typewriter:
       return args[0]
     else:
       return tuple(args)
+
+  # Gets a string, makes it bold, returns the string.
+  def bolden(self, *args):
+    return self.stylise(self.Styles.BOLD, *args)
+
+  # # Gets a string, underlines it, returns the string.
+  def underline(self, *args):
+    return self.stylise(self.Styles.UNDERLINE, *args)
 
   # Returns current terminal width and height (columns and lines) as a tuple.
   def get_terminal_size(self) -> tuple:
@@ -30,10 +91,10 @@ class Typewriter:
   # If the specified number of lines is 0 then the current line will be erased.
   def clear_lines(self, lines: int):
     if lines == 0:
-      print('\r' + self.CLEAR, end='')
+      print('\r' + CLEAR, end='')
       return
     for line in range(lines):
-      print(self.CLEAR, end=self.CURSOR_UP)
+      print(CLEAR, end=CURSOR_UP)
 
   # Clears current line to print a new one.
   # Common usecase: after typewriter.print_status()
