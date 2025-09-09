@@ -14,7 +14,7 @@ def escape_seq(text: str):
 
 # Responsible for formatting, modification and printing of strings.
 class Typewriter:
-  class Styles(Enum):
+  class Style(Enum):
     RESET = escape_seq(0)
     INVERT = escape_seq(7)
     BOLD = escape_seq(1)
@@ -24,7 +24,7 @@ class Typewriter:
     HIDDEN = escape_seq(8)
     THROUGHLINE = escape_seq(9)
 
-  class Colours(Enum):
+  class Colour(Enum):
     DEFAULT = escape_seq(39)
     WHITE = escape_seq(37)
     BLACK = escape_seq(30)
@@ -43,7 +43,7 @@ class Typewriter:
     BRIGHT_YELLOW = escape_seq(93)
     BRIGHT_CYAN = escape_seq(96)
 
-  class BackgroundColours(Enum):
+  class BackgroundColour(Enum):
     DEFAULT = escape_seq(49)
     WHITE = escape_seq(47)
     BLACK = escape_seq(40)
@@ -81,6 +81,10 @@ class Typewriter:
   # # Gets a string, underlines it, returns the string.
   def underline(self, *args):
     return self.stylise(self.Styles.UNDERLINE, *args)
+
+  # Gets RGB values, returns escape sequence to print with that colour in the terminal.
+  def rgb_to_escape_sequence(self, red: int, green: int, blue: int):
+    return escape_seq(f'38;2;{red};{green};{blue}')
 
   # Returns current terminal width and height (columns and lines) as a tuple.
   def get_terminal_size(self) -> tuple:
