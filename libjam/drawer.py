@@ -53,10 +53,12 @@ class Drawer:
     return open(path, 'r').read()
 
   # Writes a given string to a file.
-  def write_file(self, text: str, path: str) -> str:
+  def write_file(self, text: str, path: str, overwrite: bool = False) -> str:
+    if not overwrite:
+      if self.exists(path):
+        raise FileExistsError(f"File '{path}' already exists.")
     path = realpath(path)
-    with open(path, 'w') as file:
-      file.write(text)
+    open(path, 'w').write(text)
     return outpath(path)
 
   # Useful variable getters:
