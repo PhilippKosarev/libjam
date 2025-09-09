@@ -18,8 +18,7 @@ joinpath = os.path.join
 
 # Helper functions
 def realpath(path: str) -> str:
-  path = os.path.expanduser(path)
-  return os.path.normpath(path)
+  return os.path.abspath(os.path.expanduser(os.path.normpath(path)))
 
 
 def realpaths(path: list) -> list:
