@@ -2,7 +2,7 @@
 import shutil
 
 
-# Responsible for formatting, modification and printing of strings
+# Responsible for formatting, modification and printing of strings.
 class Typewriter:
   # Shorthand vars
   BOLD = '\033[1m'
@@ -11,9 +11,15 @@ class Typewriter:
   CURSOR_UP = '\033[1A'
 
   # Gets a string, makes it bold, returns the string.
-  def bolden(self, text: str) -> str:
-    text = f'{self.BOLD}{text}{self.NORMAL}'
-    return text
+  def bolden(self, *args):
+    args = [f'{self.BOLD}{text}{self.NORMAL}' for text in args]
+    n_args = len(args)
+    if n_args == 0:
+      return ''
+    elif n_args == 1:
+      return args[0]
+    else:
+      return tuple(args)
 
   # Returns current terminal width and height (columns and lines) as a tuple.
   def get_terminal_size(self) -> tuple:
@@ -31,14 +37,18 @@ class Typewriter:
 
   # Clears current line to print a new one.
   # Common usecase: after typewriter.print_status()
-  def print(self, text: str):
+  def print(self, *args, **kwargs):
     self.clear_lines(0)
-    print(text)
+    print(*args, **kwargs)
 
-  # Prints on the same line
-  def print_status(self, status: str):
+  # Prints on the same line.
+  def print_status(self, *args, **kwargs):
+    if 'end' in kwargs:
+      kwargs['end'] += '\r'
+    else:
+      kwargs['end'] = '\r'
     self.clear_lines(0)
-    print(f' {status}', end='\r')
+    print('', *args, **kwargs)
 
   # Clears the current line and prints the progress bar on the same line.
   def print_progress(self, status: str, current: int, total: int):
@@ -116,8 +126,6 @@ class Typewriter:
     for row in range(len(columns[0])):
       rows.append([])
     current_row = 0
-    # print(columns)
-    # print()
     for row in rows:
       current_column = 0
       for column in columns:
