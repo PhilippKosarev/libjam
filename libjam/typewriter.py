@@ -51,20 +51,36 @@ class Typewriter:
     print('', *args, **kwargs)
 
   # Clears the current line and prints the progress bar on the same line.
-  def print_progress(self, status: str, current: int, total: int):
-    width = 25
-    progress_float = current / total
-    percent = int(round((progress_float * 100), 0))
-    percent_string = str(percent)
-    if percent < 100:
-      percent_string = ' ' + percent_string
-    if percent < 10:
-      percent_string = ' ' + percent_string
-    progress_width = int(progress_float * width)
-    progress_bar = '=' * progress_width + ' ' * (width - progress_width)
-    self.print_status(
-      f'{percent_string}% [{progress_bar}] {status}: {current}/{total}'
-    )
+  def print_progress(
+    self,
+    status: str,
+    done: int,
+    todo: int,
+    max_bar_width: int = 50,
+    symbols: str = '[=]',
+  ):
+    # Getting maximum bar width
+    min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
+    end_padding = 2
+    bar_width = self.get_terminal_size()[0] - min_width - end_padding
+    if bar_width > max_bar_width:
+      bar_width = max_bar_width
+    # Calculating stuffs
+    progress_float = done / todo
+    percentage = str(int(progress_float * 100))
+    percentage = percentage + '%' + (' ' * (3 - len(percentage)))
+    # Outputting
+    result = f' {percentage}'
+    if bar_width > 5:
+      bar = symbols[1] * int(progress_float * bar_width)
+      bar += ' ' * (bar_width - len(bar))
+      bar = symbols[0] + bar + symbols[2]
+      result += f' {bar}'
+    result += f' {status}:'
+    todo, done = str(todo), str(done)
+    done = done + (' ' * (len(todo) - len(done)))
+    result += f' {done}/{todo}'
+    self.print_status(result)
 
   # Given a list, it returns a string with the elements of the given list
   # arranged in in columns.
