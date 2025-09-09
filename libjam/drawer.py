@@ -61,7 +61,7 @@ class Drawer:
     open(path, 'w').write(text)
     return outpath(path)
 
-  # Useful variable getters:
+  # Variable getters:
 
   # Returns the user's home folder.
   def get_home(self) -> str:
@@ -69,8 +69,7 @@ class Drawer:
 
   # Returns the system's temporary folder.
   def get_temp(self) -> str:
-    temp = str(tempfile.gettempdir())
-    return outpath(temp)
+    return outpath(str(tempfile.gettempdir()))
 
   # Returns host OS name.
   # Common values: 'Linux', 'Windows', 'Darwin'.
@@ -163,15 +162,58 @@ class Drawer:
   # Non-destructive file operations:
 
   # Copies given file/folder.
-  def copy(self, source: str, destination: str, overwrite=False) -> str:
-    source = realpath(source)
-    destination = realpath(destination)
+  # Copying with progress_function is always slower.
+  def copy(
+    self,
+    source: str,
+    destination: str,
+    overwrite: bool = False,
+    progress_function: callable = None,
+  ) -> str:
     if self.is_file(source):
-      shutil.copy(source, destination)
+      return self.copy_file(source, destination, overwrite, progress_function)
     elif self.is_folder(source):
-      shutil.copytree(source, destination, dirs_exist_ok=overwrite)
+      return shutil.copytree(source, destination, dirs_exist_ok=overwrite)
     else:
-      raise FileNotFoundError(f"File '{source}' does not exist.")
+      raise FileNotFoundError(f"File at '{source}' does not exist.")
+
+  # Copies a given file.
+  # Copying with a progress_function is about 20% slower.
+  def copy_file(
+    self,
+    source: str,
+    destination: str,
+    overwrite: bool = False,
+    progress_function: callable = None,
+  ) -> str:
+    if self.is_folder(source):
+      raise IsADirectoryError(f"Path '{source}' leads to a directory.")
+    if self.is_folder(destination):
+      destination += '/' + self.get_basename(source)
+    if self.exists(destination):
+      if overwrite:
+        self.delete_path(destination)
+      else:
+        raise FileExistsError(f"File at '{destination}' already exists.")
+    if progress_function is not None:
+      todo = self.get_filesize(source)
+    source, destination = realpath(source), realpath(destination)
+    if progress_function is None:
+      shutil.copy(source, destination)
+    else:
+      with (
+        open(source, 'rb') as source_file,
+        open(destination, 'wb') as destination_file,
+      ):
+        buffer_size = 1024 * 100
+        done = 0
+        while True:
+          buffer = source_file.read(buffer_size)
+          if not buffer:
+            break
+          destination_file.write(buffer)
+          done += len(buffer)
+          progress_function(done, todo)
     return outpath(destination)
 
   # Renames a given file in a given path.
