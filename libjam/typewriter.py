@@ -61,12 +61,14 @@ class Typewriter:
   def list_to_columns(
     self,
     text_list: list,
-    num_of_columns=None,
-    offset=2,
+    num_of_columns: int = 0,
+    offset: int = 2,
   ) -> str:
+    if len(text_list) == 0:
+      return ''
     column_width = len(max(text_list, key=len))
     # Automatically set num of columns if not specified otherwise
-    if num_of_columns is None:
+    if num_of_columns == 0:
       terminal_width = shutil.get_terminal_size()[0] - 1
       num_of_columns = int(terminal_width / (column_width + offset))
       if num_of_columns < 1:
@@ -107,7 +109,7 @@ class Typewriter:
     last_column = len(columns) - 1
     iteration = 0
     for text in columns[last_column]:
-      columns[last_column][iteration] = text + '\n'
+      columns[last_column][iteration] = text
       iteration += 1
     # Creating list of rows
     rows = []
@@ -129,7 +131,9 @@ class Typewriter:
     # Adding rows' text to output
     output = ''
     for row in rows:
-      for text in row:
-        output += text
+      text = ' '.join(row)
+      if text.count('\n') > 0:
+        text = text.replace('\n', '\n' + (' ' * offset * 2))
+      output += text + '\n'
     # Returning string
     return output.rstrip()
