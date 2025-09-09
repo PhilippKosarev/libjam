@@ -173,11 +173,11 @@ class Drawer:
     if self.is_file(source):
       return self.copy_file(source, destination, overwrite, progress_function)
     elif self.is_folder(source):
-      return shutil.copytree(source, destination, dirs_exist_ok=overwrite)
+      return self.copy_folder(source, destination, overwrite, progress_function)
     else:
       raise FileNotFoundError(f"File at '{source}' does not exist.")
 
-  # Copies a given file.
+  # Copies the given file.
   # Copying with a progress_function is about 20% slower.
   def copy_file(
     self,
@@ -199,14 +199,14 @@ class Drawer:
       todo = self.get_filesize(source)
     source, destination = realpath(source), realpath(destination)
     if progress_function is None:
-      shutil.copy(source, destination)
+      shutil.copy2(source, destination)
     else:
+      buffer_size = 1024 * 100
+      done = 0
       with (
         open(source, 'rb') as source_file,
         open(destination, 'wb') as destination_file,
       ):
-        buffer_size = 1024 * 100
-        done = 0
         while True:
           buffer = source_file.read(buffer_size)
           if not buffer:
@@ -215,6 +215,74 @@ class Drawer:
           done += len(buffer)
           progress_function(done, todo)
     return outpath(destination)
+
+  # Copies the given folder.
+  # Copying with progress_function can be up to 50% slower.
+  def copy_folder(
+    self,
+    source: str,
+    destination: str,
+    overwrite: bool = False,
+    progress_function: callable = None,
+  ) -> str:
+    # Processing info
+    source = self.absolute_path(source)
+    destination = self.absolute_path(destination)
+    # Getting relative paths
+    source_folders = [
+      folder.removeprefix(source)
+      for folder in self.get_folders_recursive(source)
+    ]
+    source_files = [
+      file.removeprefix(source) for file in self.get_files_recursive(source)
+    ]
+    destination_folders = [
+      folder.removeprefix(destination)
+      for folder in self.get_folders_recursive(destination)
+    ]
+    destination_files = [
+      file.removeprefix(destination)
+      for file in self.get_files_recursive(destination)
+    ]
+    # Checking if any files are about to be overwritten
+    if not overwrite:
+      if self.exists(destination):
+        raise FileExistsError(f"File at '{destination}' already exists.")
+      sources = source_folders + source_files
+      destinations = destination_folders + destination_files
+      for path in sources:
+        if path in destinations:
+          raise FileExistsError(
+            f"File at '{destination + path}' already exists."
+          )
+    # Letting shutil do the heavy lifting
+    if progress_function is None:
+      source, destination = realpath(source), realpath(destination)
+      shutil.copytree(source, destination, dirs_exist_ok=overwrite)
+      return outpath(destination)
+    # Doing it ourselves
+    else:
+      # Creating destination folder
+      if self.is_file(destination):
+        self.delete_file(destination)
+      elif not self.is_folder(destination):
+        self.make_folder(destination)
+      # Creating folder structure in destination
+      for folder in source_folders:
+        destination_folder = destination + folder
+        if self.is_file(destination_folder):
+          self.delete_file(destination_folder)
+        elif not self.is_folder(destination_folder):
+          self.make_folder(destination_folder)
+      # Copying files
+      done, todo = 0, len(source_files)
+      for file in source_files:
+        source_file = source + file
+        destination_file = destination + file
+        self.copy_file(source_file, destination_file, overwrite)
+        done += 1
+        progress_function(done, todo)
+      return outpath(realpath(destination))
 
   # Renames a given file in a given path.
   def rename(self, folder: str, old_filename: str, new_filename: str) -> str:
