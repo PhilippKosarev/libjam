@@ -249,3 +249,30 @@ class Typewriter:
       output += text + '\n'
     # Returning string
     return output.rstrip()
+
+  # Returns a box of specified size (2 chars bigger on every side due to borders).
+  def get_box(
+    self,
+    width: int,
+    height: int,
+    style: Typewriter.BoxCharacters,
+  ) -> str:
+    straights, corners, intersections = style.value
+    lines = []
+    # Top
+    lines.append(corners[0] + straights[0] * width + corners[1])
+    # Middle
+    midlines = [straights[1] + ' ' * width + straights[1]] * height
+    lines.append('\n'.join(midlines))
+    # Bottom
+    lines.append(corners[2] + straights[0] * width + corners[3])
+    return '\n'.join(lines)
+
+  # Draws a box of specified size (2 chars bigger on every side due to borders).
+  def draw_box(
+    self,
+    width: int,
+    height: int,
+    style: Typewriter.BoxCharacters,
+  ):
+    print(self.get_box(width, height, style))
