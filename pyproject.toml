@@ -11,13 +11,13 @@ include = [
 
 [project]
 name = "libjam"
-version = "0.1.5"
+version = "0.1.6"
 authors = [
   {name = "Philipp Kosarev", email = "philipp.kosarev@gmail.com"},
 ]
 description = "A library jam for Python."
 readme = "README.md"
-requires-python = ">= 3.0.0"
+requires-python = ">= 3.8.0"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
