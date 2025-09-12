@@ -87,7 +87,7 @@ class Typewriter:
 
   # Applies a specified style to a string(s).
   def stylise(self, style: Typewriter.Style, *args):
-    reset = self.Styles.RESET.value
+    reset = Typewriter.Style.RESET.value
     args = [f'{style.value}{text}{reset}' for text in args]
     n_args = len(args)
     if n_args == 0:
@@ -99,11 +99,11 @@ class Typewriter:
 
   # Gets a string, makes it bold, returns the string.
   def bolden(self, *args):
-    return self.stylise(self.Styles.BOLD, *args)
+    return self.stylise(Typewriter.Style.BOLD, *args)
 
   # # Gets a string, underlines it, returns the string.
   def underline(self, *args):
-    return self.stylise(self.Styles.UNDERLINE, *args)
+    return self.stylise(Typewriter.Style.UNDERLINE, *args)
 
   # Gets RGB values, returns escape sequence to print with that colour in the terminal.
   def rgb_to_escape_sequence(self, red: int, green: int, blue: int):
@@ -149,7 +149,7 @@ class Typewriter:
   ):
     # Getting maximum bar width
     min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
-    end_padding = 2
+    end_padding = 5
     bar_width = self.get_terminal_size()[0] - min_width - end_padding
     if bar_width > max_bar_width:
       bar_width = max_bar_width
