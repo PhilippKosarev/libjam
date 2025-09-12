@@ -1,4 +1,5 @@
 # Imports
+from __future__ import annotations
 from enum import Enum
 import shutil
 
@@ -62,8 +63,30 @@ class Typewriter:
     BRIGHT_YELLOW = escape_seq(103)
     BRIGHT_CYAN = escape_seq(106)
 
+  class BoxCharacters(Enum):
+    STRAIGHT = (
+      '─│',
+      '┌┐└┘',
+      '┴┬├┤┼',
+    )
+    ROUND = (
+      '─│',
+      '╭╮╰╯',
+      '┴┬├┤┼',
+    )
+    BOLD = (
+      '━┃',
+      '┏┓┗┛',
+      '┻┳┣┫╋',
+    )
+    DOUBLE = (
+      '═║',
+      '╔╗╚╝',
+      '╩╦╠╣╬',
+    )
+
   # Applies a specified style to a string(s).
-  def stylise(self, style: Enum, *args):
+  def stylise(self, style: Typewriter.Style, *args):
     reset = self.Styles.RESET.value
     args = [f'{style.value}{text}{reset}' for text in args]
     n_args = len(args)
