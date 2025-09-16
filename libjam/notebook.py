@@ -58,6 +58,5 @@ class Notebook:
   # Reads a given json file as a dictionary.
   def read_json(self, json_file: str) -> dict:
     json_string = drawer.read_file(json_file)
-    json_string = json_string.replace('null', 'None')
     data = json.loads(json_string, strict=False)
     return data
