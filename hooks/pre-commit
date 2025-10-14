@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#! /usr/bin/env bash
 
 # Text styles
 bold=$(tput bold)
@@ -6,7 +6,7 @@ normal=$(tput sgr0)
 
 # Checking for potential errors
 check_command="ruff --config ruff.toml check"
-echo "Running '$check_command'"
+echo "Running '$check_command'."
 $check_command
 status=$?
 if [[ $status == "127" ]]; then

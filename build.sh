@@ -1,16 +1,4 @@
-#! /bin/bash
-
-# Functions
-function Ask {
-  while true; do
-    read -p "$* [y/N]: " yn
-    case $yn in
-      [Yy]*) return 0 ;;
-      [Nn]*) return 1 ;;
-      *) return 1 ;;
-    esac
-  done
-}
+#! /usr/bin/env bash
 
 echo "Deleting 'dist' directory..."
 rm ./dist -r
