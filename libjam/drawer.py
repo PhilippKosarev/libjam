@@ -47,18 +47,40 @@ class Drawer:
     path = realpath(path)
     return outpath(path)
 
-  # Reads a given file as a string.
-  def read_file(self, path: str) -> str:
+  # Reads a given file.
+  def read_file(
+    self,
+    path: str,
+    strict: bool = False,
+    binary: bool = False,
+  ) -> str or bytes:
     path = realpath(path)
-    return open(path, 'r').read()
+    strictness = {True: 'strict', False: 'replace'}
+    if binary:
+      with open(path, 'rb') as f:
+        data = f.read()
+    else:
+      with open(path, 'r', errors=strictness.get(strict)) as f:
+        data = f.read()
+    return data
 
-  # Writes a given string to a file.
-  def write_file(self, text: str, path: str, overwrite: bool = False) -> str:
+  # Writes given string/bytes to a file.
+  def write_file(
+    self,
+    path: str,
+    content: str or bytes,
+    overwrite: bool = False,
+  ) -> str:
     if not overwrite:
       if self.exists(path):
         raise FileExistsError(f"File '{path}' already exists.")
     path = realpath(path)
-    open(path, 'w').write(text)
+    if type(content) is bytes:
+      with open(path, 'wb') as f:
+        f.write(content)
+    else:
+      with open(path, 'w') as f:
+        f.write(content)
     return outpath(path)
 
   # Variable getters:
