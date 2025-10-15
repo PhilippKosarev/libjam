@@ -3,6 +3,7 @@ import os
 import sys
 import shutil
 import tempfile
+import filetype
 import zipfile
 import rarfile
 import py7zr
@@ -10,13 +11,12 @@ import math
 import platform
 import subprocess
 
-
 # Shorthand vars
 PLATFORM = platform.system()
 joinpath = os.path.join
 
 
-# Helper functions
+# Internal functions
 def realpath(path: str) -> str:
   return os.path.abspath(os.path.expanduser(os.path.normpath(path)))
 
@@ -433,12 +433,18 @@ class Drawer:
     return depth
 
   # Returns the extension of a given file.
-  def get_filetype(self, path: str) -> str:
+  def get_extension(self, path: str) -> str:
     if self.is_folder(path):
       return 'folder'
     basename = self.get_basename(path)
     filetype = os.path.splitext(basename)[1].removeprefix('.')
     return filetype
+
+  # Returns the filetype of a given file.
+  def get_filetype(self, file: str or bytes) -> str:
+    if type(file) is str:
+      file = realpath(file)
+    return filetype.guess_extension(file)
 
   # File statistics:
 
