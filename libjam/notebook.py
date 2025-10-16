@@ -1,5 +1,5 @@
 # Imports
-import tomllib
+import toml
 import configparser
 import json
 import io
@@ -30,8 +30,12 @@ class Notebook:
   # Returns a toml file parsed to a dict.
   def read_toml(self, file: str) -> dict:
     data = drawer.read_file(file)
-    data = tomllib.loads(data)
-    return data
+    return toml.loads(data)
+
+  # Writes a toml file parsed from a dict.
+  def write_toml(self, path: str, contents: dict, overwrite: bool = False):
+    data = toml.dumps(contents)
+    drawer.write_file(path, data, overwrite)
 
   # Returns an ini file parsed to a dict.
   def read_ini(self, ini_file: str) -> dict:
@@ -58,3 +62,8 @@ class Notebook:
   def read_json(self, path: str) -> dict:
     data = drawer.read_file(path)
     return json.loads(data, strict=False)
+
+  # Writes a json file parsed from a dict.
+  def write_json(self, path: str, contents: dict, overwrite: bool = False):
+    data = json.dumps(contents, indent=2)
+    drawer.write_file(path, data, overwrite)
