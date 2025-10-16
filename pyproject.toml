@@ -17,7 +17,7 @@ authors = [
 ]
 description = "A library jam for Python."
 readme = "README.md"
-requires-python = ">= 3.8.0"
+requires-python = ">= 3.10.0"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
@@ -29,6 +29,7 @@ dependencies = [
   "Send2Trash >= 1.8.0",
   "rarfile >= 4.0",
   "py7zr >= 1.0.0",
+  "platformdirs >= 4.0.0",
 ]
 
 [project.urls]

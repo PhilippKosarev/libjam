@@ -2,15 +2,16 @@
 import io
 import os
 import sys
+import math
 import shutil
-import tempfile
 import filetype
+import tempfile
 import zipfile
 import rarfile
 import tarfile
 import py7zr
-import math
 import platform
+import platformdirs
 import subprocess
 
 # Shorthand vars
@@ -253,6 +254,10 @@ class Drawer:
   # Returns the user's home folder.
   def get_home(self) -> str:
     return outpath(os.path.expanduser('~'))
+
+  # Returns the user's config folder.
+  def get_config(self) -> str:
+    return outpath(platformdirs.user_config_dir())
 
   # Returns the system's temporary folder.
   def get_temp(self) -> str:
