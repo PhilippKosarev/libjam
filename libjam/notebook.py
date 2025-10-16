@@ -2,10 +2,12 @@
 import tomllib
 import configparser
 import json
+import io
 
 # Internal imports
 from .drawer import Drawer
 
+# Shorthand vars
 drawer = Drawer()
 
 
@@ -31,9 +33,7 @@ class Notebook:
     data = tomllib.loads(data)
     return data
 
-  # Reads INI file and returns its contents in the form of a dict.
-  # allow_duplicates is only to be used as a last resort due to the performance
-  # impact and inaccuracy in results.
+  # Returns an ini file parsed to a dict.
   def read_ini(self, ini_file: str) -> dict:
     data = drawer.read_file(ini_file)
     parser = configparser.ConfigParser(
@@ -41,22 +41,20 @@ class Notebook:
       strict=False,
     )
     parser.read_string(data)
-    return dict(parser)
+    return parser._sections
 
-  # Writes an INI file from a given dict to a given path.
-  def write_ini(self, ini_file: str, contents: dict):
-    parser = configparser.ConfigParser()
-    for section in contents:
-      for var_name in contents.get(section):
-        value = contents.get(section).get(var_name)
-        if section not in parser:
-          parser[section] = {}
-        parser[section][var_name] = value
-    with open(ini_file, 'w') as file:
-      parser.write(file)
+  # Writes a ini file parsed from a dict.
+  def write_ini(self, path: str, contents: dict, overwrite: bool = False):
+    parser = configparser.ConfigParser(
+      inline_comment_prefixes=('#', ';'),
+      strict=False,
+    )
+    parser.read_dict(contents)
+    output = io.StringIO()
+    parser.write(output)
+    drawer.write_file(path, output.getvalue(), overwrite)
 
-  # Reads a given json file as a dictionary.
-  def read_json(self, json_file: str) -> dict:
-    json_string = drawer.read_file(json_file)
-    data = json.loads(json_string, strict=False)
-    return data
+  # Returns a json file parsed to a dict.
+  def read_json(self, path: str) -> dict:
+    data = drawer.read_file(path)
+    return json.loads(data, strict=False)
