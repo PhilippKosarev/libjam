@@ -86,13 +86,17 @@ class Typewriter:
     )
 
   # Applies a specified style to a string(s).
-  def stylise(self, style: Typewriter.Style, *args):
+  def stylise(
+    self,
+    style: Typewriter.Style or Typewriter.Colour or Typewriter.BackgroundColour,
+    *args,
+  ):
+    if len(args) == 0:
+      return ''
     reset = Typewriter.Style.RESET.value
     args = [f'{style.value}{text}{reset}' for text in args]
     n_args = len(args)
-    if n_args == 0:
-      return ''
-    elif n_args == 1:
+    if n_args == 1:
       return args[0]
     else:
       return tuple(args)
@@ -170,85 +174,56 @@ class Typewriter:
     result += f' {done}/{todo}'
     self.print_status(result)
 
-  # Given a list, it returns a string with the elements of the given list
-  # arranged in in columns.
+  # Returns a string with elements of the list arranged in in columns.
   def list_to_columns(
     self,
     text_list: list,
-    num_of_columns: int = 0,
+    n_columns: int = 0,
     offset: int = 2,
+    spacing: int = 1,
   ) -> str:
-    if len(text_list) == 0:
+    text_list_len = len(text_list)
+    if text_list_len == 0:
       return ''
-    column_width = len(max(text_list, key=len))
-    # Automatically set num of columns if not specified otherwise
-    if num_of_columns == 0:
-      terminal_width = shutil.get_terminal_size()[0] - 1
-      num_of_columns = int(terminal_width / (column_width + offset))
-      if num_of_columns < 1:
-        num_of_columns = 1
-    # Creating a list of columns
-    columns = []
-    iteration = 0
-    for item in text_list:
-      current_column = iteration % num_of_columns
-      if len(columns) <= current_column:
-        columns.append([])
-      columns[current_column].append(item)
-      iteration += 1
-    # Equalising width of columns
-    current_column = 0
+    text_list = [str(text) for text in text_list]
+    sorted_text_list = sorted(text_list, key=len, reverse=True)
+    # Getting n_columns
+    if n_columns == 0:
+      available_width = shutil.get_terminal_size()[0] - offset
+      counter = 0
+      while True:
+        texts = sorted_text_list[:counter]
+        if counter == text_list_len:
+          n_columns = counter
+          break
+        if len((' ' * spacing).join(texts)) > available_width:
+          n_columns = counter - 1
+          break
+        counter += 1
+      if n_columns < 1:
+        n_columns = 1
+    columns_range = range(n_columns)
+    # Getting columns
+    columns = [[] for i in columns_range]
+    for i in columns_range:
+      columns[i] += text_list[i::n_columns]
+    columns = [column for column in columns if len(column) > 0]
+    # Getting column widths
+    column_widths = []
     for column in columns:
-      column_width = 0
-      # Getting column width
-      for text in column:
-        if len(text) > column_width:
-          column_width = len(text)
-      # Adding spaces
-      current_text = 0
-      for text in column:
-        if current_column == len(columns) - 1:
-          spaces = ''
-        else:
-          spaces = ' ' * ((column_width - len(text)) + 1)
-        columns[current_column][current_text] = text + spaces
-        current_text += 1
-      current_column += 1
-    # Adding offset
-    iteration = 0
-    for text in columns[0]:
-      columns[0][iteration] = ' ' * offset + text
-      iteration += 1
-    # Adding newlines
-    last_column = len(columns) - 1
-    iteration = 0
-    for text in columns[last_column]:
-      columns[last_column][iteration] = text
-      iteration += 1
-    # Creating list of rows
-    rows = []
-    for row in range(len(columns[0])):
-      rows.append([])
-    current_row = 0
-    for row in rows:
-      current_column = 0
-      for column in columns:
-        try:
-          text = columns[current_column][current_row]
-        except IndexError:
-          continue
-        rows[current_row].append(text)
-        current_column += 1
-      current_row += 1
-    # Adding rows' text to output
-    output = ''
-    for row in rows:
-      text = ' '.join(row)
-      if text.count('\n') > 0:
-        text = text.replace('\n', '\n' + (' ' * offset * 2))
-      output += text + '\n'
-    # Returning string
-    return output.rstrip()
+      column_widths.append(len(sorted(column, key=len, reverse=True)[0]))
+    # Combining rows to string
+    n_rows = len(columns[0])
+    strings = []
+    for i in range(n_rows):
+      start = n_columns * i
+      end = start + n_columns
+      row = text_list[start:end]
+      # Equalising row width
+      for i in range(len(row)):
+        row[i] += ' ' * (column_widths[i] - len(row[i]))
+      strings.append(' ' * offset + (' ' * spacing).join(row))
+    return '\n'.join(strings)
 
   # Returns a box of specified size (2 chars bigger on every side due to borders).
   def get_box(
