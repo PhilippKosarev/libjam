@@ -346,9 +346,14 @@ class Drawer:
     return outpath(path)
 
   # Creates a new folder.
-  def make_folder(self, path: str) -> str:
+  def make_folder(self, path: str, error_on_exists: bool = False) -> str:
+    if self.exists(path):
+      if error_on_exists:
+        raise FileExistsError(f"Folder '{path}' already exists.")
+      elif not self.is_folder(path):
+        raise FileExistsError(f"There is already a file at '{path}'.")
     path = realpath(path)
-    path = os.mkdir(path)
+    os.mkdir(path)
     return outpath(path)
 
   # Non-destructive file operations:
