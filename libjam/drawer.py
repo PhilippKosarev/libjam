@@ -348,12 +348,13 @@ class Drawer:
   # Creates a new folder.
   def make_folder(self, path: str, error_on_exists: bool = False) -> str:
     if self.exists(path):
-      if error_on_exists:
-        raise FileExistsError(f"Folder '{path}' already exists.")
-      elif not self.is_folder(path):
+      if not self.is_folder(path):
         raise FileExistsError(f"There is already a file at '{path}'.")
-    path = realpath(path)
-    os.mkdir(path)
+      elif error_on_exists:
+        raise FileExistsError(f"Folder at '{path}' already exists.")
+    else:
+      path = realpath(path)
+      os.mkdir(path)
     return outpath(path)
 
   # Non-destructive file operations:
@@ -625,14 +626,19 @@ class Drawer:
 
   # Returns the weight of a given file/folder, in bytes.
   def get_filesize(self, path: str) -> int:
-    path = realpath(path)
     if self.is_file(path):
-      size = os.path.getsize(path)
+      path = realpath(path)
+      size = os.lstat(path).st_size
     elif self.is_folder(path):
       size = 0
       subfiles = self.get_files_recursive(path)
       for file in subfiles:
-        size += os.path.getsize(file)
+        file = realpath(file)
+        size += os.lstat(file).st_size
+    else:
+      raise FileNotFoundError(
+        f"Path '{path}' does not lead to a file or directory."
+      )
     return size
 
   # Given a number of bytes, returns a human readable filesize, as a tuple.
