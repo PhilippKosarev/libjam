@@ -7,7 +7,6 @@ from .notebook import Notebook
 from .flashcard import Flashcard
 
 # Instancing
-captain = Captain()
 drawer = Drawer()
 typewriter = Typewriter()
 clipboard = Clipboard()

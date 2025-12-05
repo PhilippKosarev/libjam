@@ -1,290 +1,295 @@
 # Imports
 import sys
-
-# Internal imports
-from .drawer import Drawer
-from .typewriter import Typewriter
-
-drawer = Drawer()
-typewriter = Typewriter()
+import os
 
 
-# Helper functions
-def on_invalid_option(script: str, option: str):
-  print(
-    f"""Invalid option '{option}'.
-Try '{script} --help' for more information."""
-  )
-  sys.exit(-1)
+# Exceptions
+class ParsingError(Exception):
+  pass
 
 
-def on_command_not_recognised(script: str, command: str, commands: list):
-  available_commands = ', '.join(commands)
-  print(
-    f"""{script}: command '{command}' not recognised.
-Available commands: {available_commands}"""
-  )
-  sys.exit(-1)
-
-
-def get_raw_args() -> tuple:
-  args = sys.argv.copy()
-  script = drawer.get_basename(args[0])
-  args.pop(0)
-  return script, args
-
-
-def parse_args(script: str, raw_args: list) -> tuple:
-  # Initialising vars
-  command = None
-  command_args = []
-  short_flags = []
-  long_flags = []
-  # Categorising args
-  for arg in raw_args:
+# Internal functions
+def categorise_args(all_args: list) -> tuple:
+  # Vars
+  args = []
+  long_opts = []
+  short_opts = []
+  # Categorising
+  for arg in all_args:
     if arg.startswith('--'):
-      if arg == '--':
-        on_invalid_option(script, arg)
-      long_flags.append(arg.removeprefix('--'))
+      long_opts.append(arg.removeprefix('--'))
     elif arg.startswith('-'):
-      if arg == '-':
-        on_invalid_option(script, arg)
-      short_flags += list(arg.removeprefix('-'))
+      short_opts += list(arg.removeprefix('-'))
     else:
-      if command is None:
-        command = arg
-      else:
-        command_args.append(arg)
-  return command, command_args, short_flags, long_flags
+      args.append(arg)
+  # Returning
+  return args, long_opts, short_opts
 
 
-# Returns item from dict if it exists and it is not empty, otherwise
-# returns None
-def get_existing(dictionary: dict, item: str):
-  if item in dictionary:
-    item = dictionary.get(item)
-    if item is not None:
-      if len(item) > 0:
-        return item
-  return None
-
-
-# Generates the help pages.
-class Helper:
-  def get_help_section(self, title: str, content: str or list) -> str:
-    offset = 2
-    offset_string = ' ' * offset
-    section = f'{typewriter.bolden(title + ":")}\n'
-    if type(content) is str:
-      content = content.replace('\n', '\n' + offset_string)
-      section += f'{offset_string}{content}\n'
-    elif type(content) is list:
-      columns = 2
-      section += typewriter.list_to_columns(content, columns, offset) + '\n'
-    else:
-      raise NotImplementedError()
-    return section.rstrip()
-
-  def sections_to_help(self, sections: list) -> str:
-    help = ''
-    for title, content in sections:
-      help += self.get_help_section(title, content) + '\n'
-    return help.rstrip()
-
-  def get_command_usage(
-    self,
-    script: str,
-    command: str,
-    command_info: dict,
-  ) -> str:
-    required_args = get_existing(command_info, 'arguments')
-    usage_string = f'{script} {command}'
-    if required_args is not None:
-      arbitrary_args = required_args[-1][0] == '*'
-      if arbitrary_args:
-        required_args[-1] = required_args[-1].removeprefix('*')
-      usage_string += ' ' + ' '.join(f'<{item}>' for item in required_args)
-      if arbitrary_args:
-        usage_string += '...'
-    return usage_string
-
-  # Prints the help page for a specific command.
-  def print_command_help(
-    self,
-    script: str,
-    command: str,
-    command_info: dict,
-  ):
-    usage_string = self.get_command_usage(script, command, command_info)
-    description = command_info.get('description') + '.'
-    sections = [
-      ('Usage', usage_string),
-      ('Description', description),
-    ]
-    print(self.sections_to_help(sections))
-
-  # Returns a help page for a CLI program.
-  def print_help(
-    self,
-    script: str,
-    description: str,
-    commands: dict,
-    options: dict = None,
-  ):
-    # Getting info
-    commands_list = []
-    for command in commands:
-      command_info = commands.get(command)
-      command_description = command_info.get('description')
-      commands_list.append(f'{command}')
-      commands_list.append(f'- {command_description}.')
-    # Sections
-    sections = [
-      ('Synopsis', f'{script} [OPTIONS] [COMMAND]'),
-    ]
-    sections += [
-      ('Description', description + '.'),
-      ('Commands', commands_list),
-    ]
-    # Adding options
-    if options is not None:
-      options_list = []
-      for option in options:
-        option_desc = options.get(option).get('description')
-        long = ', --'.join(options.get(option).get('long'))
-        short = ', -'.join(options.get(option).get('short'))
-        options_list.append(f'-{short}, --{long}')
-        options_list.append(f'- {option_desc}.')
-      option_section = ('Options', options_list)
-      sections.append(option_section)
-    # Printing
-    print(self.sections_to_help(sections))
-
-
-helper = Helper()
-
-
-def process_options(
-  script: str,
-  options: dict,
-  short_flags: list,
-  long_flags: list,
+def parse_options(
+  self,
+  long_opts: list,
+  short_opts: list,
 ) -> dict:
-  # Creating option bools
-  processed_options = {}
-  for option in options:
-    processed_options[option] = False
-  # Flags
-  for prefix, flags, flag_type in [
-    ('-', short_flags, 'short'),
-    ('--', long_flags, 'long'),
-  ]:
-    for flag in flags:
-      if options is not None:
-        found = False
-        for option in options:
-          opt_keyword = options.get(option).get(flag_type)
-          if flag in opt_keyword:
-            processed_options[option] = True
-            found = True
-            break
-        if not found:
-          on_invalid_option(script, prefix + flag)
-      elif len(flags) > 0:
-        on_invalid_option(script, prefix + flag)
-  return processed_options
-
-
-def process_command_arguments(
-  script: str, command: str, command_info: dict, command_args: list
-) -> list:
-  required_arguments = get_existing(command_info, 'arguments')
-  n_given_args = len(command_args)
-  if required_arguments is not None:
-    required_arguments = required_arguments.copy()
-    arbitrary_args = required_arguments[-1][0] == '*'
-    if arbitrary_args:
-      required_arguments[-1] = required_arguments[-1].removeprefix('*')
-    n_required_args = len(required_arguments)
-    if not arbitrary_args:
-      if n_given_args > n_required_args:
-        print(f'{script} {command}: too many arguments')
-        sys.exit(-1)
-    if n_given_args < n_required_args:
-      missing_arg = required_arguments[n_given_args]
-      missing_arg = f'<{missing_arg}>'
-      if arbitrary_args and missing_arg == required_arguments[-1]:
-        missing_arg += '...'
-      print(f'{script} {command}: missing argument {missing_arg}')
-      sys.exit(-1)
-    if len(required_arguments) == 1 and not arbitrary_args:
-      return command_args[0]
-    return command_args
-  elif n_given_args > 0:
-    print(
-      f"""{script}: '{command}' does not take arguments.
-Try '{script} {command} --help' for more information."""
-    )
-    sys.exit(-1)
-  return None
-
-
-# Processes command line arguments.
-class Captain:
-  # See the example in the readme for proper info.
-  def sail(
-    self,
-    description: str,
-    commands: dict,
-    options: dict = None,
-  ) -> tuple:
-    no_options = options is None
-    if no_options:
-      options = {}
-    # Adding help to options
-    options['help'] = {
-      'long': ['help'],
-      'short': ['h'],
-      'description': 'Prints help',
-    }
-    # Getting input args
-    script, args = get_raw_args()
-    command, command_args, short_flags, long_flags = parse_args(script, args)
-    # Processing options
-    processed_options = process_options(
-      script, options, short_flags, long_flags
-    )
-    # Checking if command is specified
-    if command is None:
-      if processed_options.get('help'):
-        helper.print_help(script, description, commands, options)
-        sys.exit(0)
+  parsed_options = {}
+  for option in self.options:
+    parsed_options[option.get('key')] = False
+  for prefix, key, given_opts in (
+    ('--', 'long', long_opts),
+    ('-', 'short', short_opts),
+  ):
+    for given_opt in given_opts:
+      found = None
+      for option in self.options:
+        flags = option.get(key)
+        if given_opt in flags:
+          found = option
+          break
+      if found is None:
+        self.on_usage_error(f"unrecognised option '{prefix}{given_opt}'")
       else:
-        print(
-          f"""No command specified.
-Try '{script} --help' for more information."""
-        )
-        sys.exit(-1)
-    # Getting command info
-    command_info = None
-    for item in commands:
-      if command == item:
-        command_info = commands.get(item)
-    # Checking if command is recognised
-    if command_info is None:
-      on_command_not_recognised(script, command, commands)
-    else:
-      if processed_options.get('help'):
-        helper.print_command_help(script, command, command_info)
-        sys.exit(0)
-    command_args = process_command_arguments(
-      script,
-      command,
-      command_info,
-      command_args,
+        parsed_options[found.get('key')] = True
+  return parsed_options
+
+
+# Returns a list of function parameters.
+def get_function_args(function: callable) -> list:
+  code = function.__code__
+  if code.co_kwonlyargcount:
+    raise NotImplementedError(
+      'Keyword-only function arguments are not supported.'
     )
-    command_function = command_info.get('function')
-    return_tuple = (command_function, command_args)
-    if not no_options:
-      return_tuple += (processed_options,)
-    return return_tuple
+  argcount = code.co_argcount
+  varnames = list(code.co_varnames)
+  args = varnames[:argcount]
+  flags = code.co_flags
+  if flags & 0x04:
+    args.append(varnames[len(args)])
+  if argcount < len(args):
+    args[argcount] = '*' + args[argcount]
+  return args
+
+
+def function_args_to_posix(input_args: list) -> list:
+  output_args = []
+  for arg in input_args:
+    arg = arg.upper().replace('_', ' ')
+    if arg.startswith('*'):
+      arg = arg.removeprefix('*')
+      arg = f'[{arg}]...'
+    else:
+      arg = f'<{arg}>'
+    output_args.append(arg)
+  return output_args
+
+
+def get_object_methods(obj: object) -> dict:
+  commands = {}
+  class_dict = obj.__class__.__dict__
+  for key in class_dict:
+    if key.startswith('_'):
+      continue
+    function = class_dict.get(key)
+    key = key.replace('_', '-')
+    commands[key] = function
+  return commands
+
+
+def get_section(title: str, body: str or list or None) -> str:
+  if not body:
+    return ''
+  if type(body) is list:
+    body = ['' if i is None else i for i in body]
+    if len(body) > 1:
+      for i in range(1, len(body), 2):
+        if body[i]:
+          body[i] = '- ' + body[i]
+    body = typewriter.list_to_columns(body, n_columns=2)
+  else:
+    body = typewriter.list_to_columns([body], n_columns=2)
+  return typewriter.bolden(title + ':') + '\n' + body
+
+
+class Captain:
+  def __init__(self, ship: object or callable, *, program: str = None):
+    if type(ship) is type:
+      raise ParsingError(
+        f"Specified object '{ship.__name__}' is not initialised"
+      )
+    self.ship = ship
+    if program is None:
+      program = os.path.basename(sys.argv[0])
+    self.program = program
+    self.options = []
+
+  def add_option(
+    self,
+    key: str,
+    flags: list = None,
+    description: str = '',
+  ):
+    if flags is None:
+      flags = [key]
+    long_flags = []
+    short_flags = []
+    for flag in flags:
+      if len(flag) == 1:
+        short_flags.append(flag)
+      else:
+        long_flags.append(flag)
+    option = {
+      'key': key,
+      'long': long_flags,
+      'short': short_flags,
+      'description': description,
+    }
+    self.options.append(option)
+
+  def on_usage_error(self, text: str, command: str = None):
+    prefix = self.program + ':'
+    if command:
+      prefix += ' ' + command + ':'
+    print(prefix + ' ' + text, file=sys.stderr)
+    sys.exit(os.EX_USAGE)
+
+  def on_missing_arguments(self, missing_args: str, command: str = None):
+    missing_args = function_args_to_posix(missing_args)
+    if len(missing_args) == 1:
+      self.on_usage_error(f'missing argument {missing_args[0]}', command)
+    missing_args = ' '.join(missing_args)
+    self.on_usage_error(f'missing arguments {missing_args}', command)
+
+  def print_help(self):
+    # Initialising typewriter
+    from .typewriter import Typewriter
+
+    global typewriter
+    typewriter = Typewriter()
+    # Sections
+    sections = []
+    ship_callable = callable(self.ship)
+    # Usage
+    if not ship_callable:
+      commands = get_object_methods(self.ship)
+      usage_body = []
+      for command in commands:
+        command_args = get_function_args(commands.get(command))[1:]
+        command_args = ' '.join(function_args_to_posix(command_args))
+        usage_body.append(f'{self.program} {command} {command_args}')
+      sections.append(get_section('Usage', '\n  '.join(usage_body)))
+    # Synopsys
+    if ship_callable:
+      function_args = get_function_args(self.ship)
+      posix_args = ' '.join(function_args_to_posix(function_args))
+      sections.append(
+        get_section('Synopsis', f'{self.program} [OPTION]... {posix_args}')
+      )
+    else:
+      sections.append(
+        get_section('Synopsis', f'{self.program} [OPTION]... COMMAND [ARGS]...')
+      )
+    doc = self.ship.__doc__
+    if doc:
+      sections.append(get_section('Description', doc + '.'))
+    # Commands
+    if not ship_callable:
+      commands_body = []
+      for key in commands:
+        commands_body.append(key)
+        commands_body.append(commands.get(key).__doc__ + '.')
+      sections.append(
+        get_section('Commands', commands_body),
+      )
+    # Options
+    options_body = []
+    for option in self.options:
+      long = ['--' + string for string in option.get('long')]
+      short = ['-' + string for string in option.get('short')]
+      flags = ', '.join(short + long)
+      options_body.append(flags)
+      options_body.append(option.get('description') + '.')
+    sections.append(
+      get_section('Options', options_body),
+    )
+    # Removing empty sections
+    sections = [section for section in sections if section]
+    # Printing
+    print('\n'.join(sections))
+
+  def parse(
+    self,
+    args: list = None,
+    *,
+    add_help: bool = True,
+  ) -> tuple:
+    # Retrieving args
+    if args is None:
+      args = sys.argv[1:]
+    # Categorising args
+    given_args, long_opts, short_opts = categorise_args(args)
+    # Parsing options and printing help if needed
+    if add_help:
+      self.add_option(
+        'help',
+        ['help', 'h'],
+        'Prints this page',
+      )
+    parsed_options = parse_options(self, long_opts, short_opts)
+    if add_help:
+      if parsed_options.get('help'):
+        self.print_help()
+        sys.exit(os.EX_OK)
+      parsed_options.pop('help')
+    # Getting chosen function
+    ship_callable = callable(self.ship)
+    if ship_callable:
+      function = self.ship
+      command = None
+    else:
+      if not given_args:
+        self.on_usage_error(
+          'No command specified.\n'
+          f"Try '{self.program} --help' for more information."
+        )
+      available_commands = get_object_methods(self.ship)
+      command = given_args.pop(0)
+      function = available_commands.get(command)
+      available_commands = ', '.join(available_commands.keys())
+      if function is None:
+        self.on_usage_error(
+          f"command '{command}' not recognised.\n"
+          f'Available commands: {available_commands}'
+        )
+    # Checking arguments
+    required_args = get_function_args(function)
+    n_required_args = len(required_args)
+    if not ship_callable:
+      if n_required_args == 0:
+        function_name = function.__name__
+        class_name = self.ship.__class__.__name__
+        raise ParsingError(
+          f"Function '{function_name}' of '{class_name}' is missing the 'self' parameter"
+        )
+      given_args.insert(0, self.ship)
+    n_given_args = len(given_args)
+    if n_required_args > 0:
+      arbitrary_args = required_args[-1][0] == '*'
+    else:
+      arbitrary_args = False
+    if not arbitrary_args:
+      if n_given_args != n_required_args:
+        if n_given_args > n_required_args:
+          self.on_usage_error('too many arguments.', command)
+        elif n_given_args < n_required_args:
+          self.on_missing_arguments(required_args[n_given_args:])
+    # Returning
+    return_list = []
+    if not ship_callable:
+      return_list += [function, given_args]
+    else:
+      return_list.append(given_args)
+    if parsed_options:
+      return_list.append(parsed_options)
+    if len(return_list) == 1:
+      return return_list[0]
+    return tuple(return_list)
