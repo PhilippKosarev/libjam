@@ -42,17 +42,16 @@ class JamTarFile:
 
 
 class SevenZipCallbacks(py7zr.callbacks.ExtractCallback):
-  def __init__(self, to_extract: int, progress_function: callable = None):
+  def __init__(self, to_extract: int, progress_function: callable):
     self.extracted = 0
     self.to_extract = to_extract
     self.progress_function = progress_function
 
   def report_start_preparation(self):
-    pass
+    self.progress_function(self.extracted, self.to_extract)
 
   def report_start(self, file, size):
-    if self.progress_function is not None:
-      self.progress_function(self.extracted, self.to_extract)
+    self.progress_function(self.extracted, self.to_extract)
     self.extracted += 1
 
   def report_end(self, file, size):
@@ -161,9 +160,12 @@ def extract_7z(
   archive_object = py7zr.SevenZipFile(io.BytesIO(archive))
   archived_files = archive_object.namelist()
   to_extract = len(archived_files)
-  seven_zip_callbacks = SevenZipCallbacks(to_extract, progress_function)
+  if progress_function:
+    callback = SevenZipCallbacks(to_extract, progress_function)
+  else:
+    callback = None
   archive_object.extract(
     extract_location,
     recursive=True,
-    callback=seven_zip_callbacks,
+    callback=callback,
   )
