@@ -245,16 +245,16 @@ class Captain:
         )
       given_args.insert(0, self.ship)
     n_given_args = len(given_args)
-    if n_required_args > 0:
-      arbitrary_args = required_args[-1][0] == '*'
+    if required_args[-1][0] == '*':
+      if n_given_args < n_required_args - 1:
+        self.on_missing_arguments(
+          required_args[n_given_args : n_required_args - 1]
+        )
     else:
-      arbitrary_args = False
-    if not arbitrary_args:
-      if n_given_args != n_required_args:
-        if n_given_args > n_required_args:
-          self.on_usage_error('too many arguments.', command)
-        elif n_given_args < n_required_args:
-          self.on_missing_arguments(required_args[n_given_args:])
+      if n_given_args < n_required_args:
+        self.on_missing_arguments(required_args[n_given_args:])
+      if n_given_args > n_required_args:
+        self.on_usage_error('too many arguments.', command)
     # Returning
     return_list = []
     if not ship_callable:
