@@ -501,26 +501,32 @@ class Drawer:
 
   # Given a number of bytes, returns a human readable filesize, as a tuple.
   # Tuple format: (value: float, short_unit_name: str, long_unit_name: str)
-  # Example tuple: (6.986356, 'mb', 'megabytes')
-  def get_readable_filesize(self, filesize: int) -> tuple:
+  # Example tuple: (6.9, 'MB', 'MegaBytes')
+  def get_readable_filesize(self, filesize: int, ndigits: int = 1) -> tuple:
     filesize_orders = [
-      ('b', 'bytes'),
-      ('kb', 'kilobytes'),
-      ('mb', 'megabytes'),
-      ('gb', 'gigabytes'),
-      ('tb', 'terabytes'),
-      ('eb', 'exabytes'),
-      ('zb', 'zettabytes'),
-      ('yb', 'yottabytes'),
-      ('rb', 'ronnabytes'),
-      ('qb', 'quettabytes'),
+      ['B', 'Bytes'],
+      ['KB', 'KiloBytes'],
+      ['MB', 'MegaBytes'],
+      ['GB', 'GigaBytes'],
+      ['TB', 'TeraBytes'],
+      ['PB', 'PetaBytes'],
+      ['EB', 'ExaBytes'],
+      ['ZB', 'ZettaBytes'],
+      ['YB', 'YottaBytes'],
+      ['RB', 'RonnaBytes'],
+      ['QB', 'QuettaBytes'],
     ]
+    n_filesize_orders = len(filesize_orders)
     if filesize > 0:
       filesize_order = math.floor(math.log(filesize, 1000))
+      if filesize_order >= n_filesize_orders:
+        filesize_order = n_filesize_orders - 1
       filesize = filesize / (1000**filesize_order)
+      filesize = round(filesize, ndigits)
     else:
       filesize_order = 0
-    return (filesize,) + filesize_orders[filesize_order]
+    units = filesize_orders[filesize_order]
+    return tuple([filesize] + units)
 
   # Archive extraction:
 
