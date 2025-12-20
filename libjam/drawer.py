@@ -126,11 +126,15 @@ class Drawer:
 
   # Returns True if path exists.
   def exists(self, path: str) -> bool:
+    if path == '':
+      return False
     path = realpath(path)
     return os.path.exists(path)
 
   # Returns True if given a path to a file.
   def is_file(self, path: str) -> bool:
+    if path == '':
+      return False
     path = realpath(path)
     return os.path.isfile(path)
 
