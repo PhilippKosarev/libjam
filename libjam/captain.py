@@ -90,6 +90,8 @@ def to_posix_args(args: list) -> list:
   return output_args
 
 
+# Returns a list of functions a given object has. Ignores functions starting
+# with an underscore.
 def get_object_functions(obj: object) -> list:
   functions = []
   class_dict = obj.__class__.__dict__
@@ -101,10 +103,13 @@ def get_object_functions(obj: object) -> list:
   return functions
 
 
+# Converts a python function name to a posix-like command name.
 def function_name_to_command(name: str) -> str:
   return name.replace('_', '-')
 
 
+# Returns a dictionary where the key is a posix-like name of the function and
+# the value is the function.
 def get_object_commands(obj: object) -> dict:
   commands = {}
   functions = get_object_functions(obj)
@@ -115,19 +120,81 @@ def get_object_commands(obj: object) -> dict:
   return commands
 
 
-def get_section(title: str, body: str or list or None) -> str:
-  if not body:
-    return ''
-  if type(body) is list:
-    body = ['' if i is None else i for i in body]
-    if len(body) > 1:
-      for i in range(1, len(body), 2):
-        if body[i]:
-          body[i] = '- ' + body[i]
-    body = typewriter.list_to_columns(body, n_columns=2)
+# Creates a section of a help page with given title and body.
+def make_help_section(title: str, body: str or list) -> str:
+  if type(body) is str:
+    body = '  ' + body.replace('\n', '\n  ')
   else:
-    body = typewriter.list_to_columns([body], n_columns=2)
-  return typewriter.bolden(title + ':') + '\n' + body
+    assert len(body) % 2 == 0
+    for i in range(1, len(body), 2):
+      string = body[i]
+      if string:
+        body[i] = f'- {string}.'
+    body = typewriter.list_to_columns(body, n_columns=2)
+  return f'{title}:\n{body}'
+
+
+# Returns the 'Commands' section of a help page.
+def get_commands_help_section(commands: dict) -> str:
+  items = []
+  for command, function in commands.items():
+    items.append(command)
+    items.append(function.__doc__)
+  return make_help_section('Commands', items)
+
+
+# Returns the 'Usage' section of a help page.
+def get_usage_help_section(program: str, commands: dict) -> str:
+  lines = []
+  for command, function in commands.items():
+    command_args = get_function_args(commands.get(command))[1:]
+    if not command_args:
+      continue
+    command_args = ' '.join(to_posix_args(command_args))
+    lines.append(f'{program} {command} {command_args}')
+  if lines:
+    text = '\n'.join(lines)
+    return make_help_section('Usage', text)
+
+
+# Returns the 'Options' section of a help page.
+def get_options_help_section(options: dict) -> str:
+  items = []
+  for option in options:
+    long = ['--' + string for string in option.get('long')]
+    short = ['-' + string for string in option.get('short')]
+    flags = ', '.join(short + long)
+    items.append(flags)
+    items.append(option.get('description'))
+  return make_help_section('Options', items)
+
+
+# Returns the help page sections for a ship of type callable.
+def get_singlecommand_sections(self) -> list[str]:
+  sections = []
+  usage = f'{self.program} [OPTION]...'
+  function_args = get_function_args(self.ship)
+  if function_args:
+    usage += ' ' + ' '.join(to_posix_args(function_args))
+  sections.append(make_help_section('Usage', usage))
+  doc = self.ship.__doc__
+  if doc:
+    sections.append(make_help_section('Description', doc + '.'))
+  return sections
+
+
+# Returns the help page sections for a ship of type object.
+def get_multicommand_sections(self) -> list[str]:
+  sections = []
+  doc = self.ship.__doc__
+  if doc:
+    sections.append(doc + '.')
+  synopsys = self.program + ' [OPTION]... COMMAND [ARGS]...'
+  sections.append(make_help_section('Synopsis', synopsys))
+  commands = get_object_commands(self.ship)
+  sections.append(get_commands_help_section(commands))
+  sections.append(get_usage_help_section(self.program, commands))
+  return sections
 
 
 # Captain is a tool for making CLIs quickly. It works by constructing a CLI
@@ -138,10 +205,19 @@ def get_section(title: str, body: str or list or None) -> str:
 class Captain:
   # If the `program` keyword is not specified, then it use the basename of
   # `sys.argv[0]`.
-  def __init__(self, ship: object or callable, *, program: str = None):
+  def __init__(
+    self,
+    ship: object or callable,
+    program: str = None,
+    *,
+    add_help: bool = True,
+    compact_help: bool = None,
+  ):
     if type(ship) is type:
       raise ParsingError(f"Specified ship '{ship.__name__}' is not initialised")
     self.ship = ship
+    self.add_help = add_help
+    self.compact_help = compact_help
     if program is None:
       program = os.path.basename(sys.argv[0])
     self.program = program
@@ -189,26 +265,21 @@ class Captain:
   # be `(function: callable, funtion_args: list)`. And, naturally, if any
   # options were added then the tuple will look like this
   # `(function: callable, funtion_args: list, options: dict)`.
-  def parse(
-    self,
-    args: list = None,
-    *,
-    add_help: bool = True,
-  ) -> tuple:
+  def parse(self, args: list = None) -> tuple:
     # Retrieving args
     if args is None:
       args = sys.argv[1:]
     # Categorising args
     given_args, long_opts, short_opts = categorise_args(args)
     # Parsing options and printing help if needed
-    if add_help:
+    if self.add_help:
       self.add_option(
         'help',
         ['help', 'h'],
         'Prints this page',
       )
     parsed_options = parse_options(self, long_opts, short_opts)
-    if add_help:
+    if self.add_help:
       if parsed_options.get('help'):
         self.print_help()
         sys.exit(os.EX_OK)
@@ -269,60 +340,23 @@ class Captain:
 
   # Prints the help page.
   def print_help(self):
-    # Sections
     sections = []
-    ship_callable = callable(self.ship)
-    # Usage
-    if not ship_callable:
-      commands = get_object_commands(self.ship)
-      usage_body = []
-      for command in commands:
-        command_args = get_function_args(commands.get(command))[1:]
-        command_args = ' '.join(to_posix_args(command_args))
-        usage_body.append(f'{self.program} {command} {command_args}')
-      sections.append(get_section('Usage', '\n  '.join(usage_body)))
-    # Synopsys
-    if ship_callable:
-      function_args = get_function_args(self.ship)
-      posix_args = ' '.join(to_posix_args(function_args))
-      sections.append(
-        get_section('Synopsis', f'{self.program} [OPTION]... {posix_args}')
-      )
+    compact = self.compact_help
+    if callable(self.ship):
+      sections += get_singlecommand_sections(self)
+      if compact is None:
+        compact = True
     else:
-      sections.append(
-        get_section('Synopsis', f'{self.program} [OPTION]... COMMAND [ARGS]...')
-      )
-    doc = self.ship.__doc__
-    if doc:
-      sections.append(get_section('Description', doc + '.'))
-    # Commands
-    if not ship_callable:
-      commands_body = []
-      for key in commands:
-        commands_body.append(key)
-        doc = commands.get(key).__doc__
-        if doc:
-          commands_body.append(doc + '.')
-        else:
-          commands_body.append('')
-      sections.append(
-        get_section('Commands', commands_body),
-      )
-    # Options
-    options_body = []
-    for option in self.options:
-      long = ['--' + string for string in option.get('long')]
-      short = ['-' + string for string in option.get('short')]
-      flags = ', '.join(short + long)
-      options_body.append(flags)
-      options_body.append(option.get('description') + '.')
-    sections.append(
-      get_section('Options', options_body),
-    )
-    # Removing empty sections
+      sections += get_multicommand_sections(self)
+      if compact is None:
+        compact = False
+    sections.append(get_options_help_section(self.options))
     sections = [section for section in sections if section]
-    # Printing
-    print('\n'.join(sections))
+    if compact:
+      separator = '\n'
+    else:
+      separator = '\n\n'
+    print(separator.join(sections))
 
   def on_usage_error(self, text: str, command: str = None):
     prefix = self.program + ':'
@@ -335,5 +369,6 @@ class Captain:
     missing_args = to_posix_args(missing_args)
     if len(missing_args) == 1:
       self.on_usage_error(f'missing argument {missing_args[0]}', command)
-    missing_args = ' '.join(missing_args)
-    self.on_usage_error(f'missing arguments {missing_args}', command)
+    else:
+      missing_args = ' '.join(missing_args)
+      self.on_usage_error(f'missing arguments {missing_args}', command)
