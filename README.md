@@ -19,56 +19,49 @@ Makes creating command line interfaces easy.
 #### Example CLI project:
 example.py:
 ```python
+#! /usr/bin/env python3
+
 from libjam import Captain
 
-class CLI:
-  'An example CLI for the libjam library'
-  def shout(self, *text):
-    'Shouts the given text back'
-    text = ' '.join(text)
-    if options.get('world'):
-      text += ' world'
-    print(text + '!')
+def shout(text: str):
+  'Shouts the given text back'
+  if options.get('world'):
+    text += ' world'
+  print(text + '!')
 
-cli = CLI()
-captain = Captain(cli)
+captain = Captain(shout, program='shout')
 captain.add_option(
   'world', ['world', 'w'],
   "Adds ' world' before the exclamation mark",
 )
 global options
-function, args, options = captain.parse()
-function(*args)
+args, options = captain.parse()
+shout(*args)
 ```
 
 Usage:
 ```sh
 $ ./example.py
-example.py: No command specified.
-Try 'example.py --help' for more information.
+shout: missing argument <TEXT>
 
-$ ./example.py shout Hello
+$ ./example.py Hello
 Hello!
 
-$ ./example.py shout Hello --world
+$ ./example.py Hello --world
 Hello world!
 
 $ ./example.py --help
 Usage:
-  example.py shout [TEXT]...
-Synopsis:
-  example.py [OPTION]... COMMAND [ARGS]...
+  shout [OPTION]... <TEXT>
 Description:
-  An example CLI for the libjam library.
-Commands:
-  shout - Shouts the given text back.
+  Shouts the given text back.
 Options:
   -w, --world - Adds ' world' before the exclamation mark.
   -h, --help  - Prints this page.
 ```
 
 ### Drawer
-Responsible for file operations. Accepts the '/' as the file separator regardless the operating system.
+Responsible for file operations. Accepts `/` as the file separator regardless the operating system.
 
 #### Example CLI for calculating filesizes
 mass.py:

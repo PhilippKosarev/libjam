@@ -1,22 +1,18 @@
-#!/usr/bin/env python3
+#! /usr/bin/env python3
 
 from libjam import Captain
 
-class CLI:
-  'An example CLI for the libjam library'
-  def shout(self, *text):
-    'Shouts the given text back'
-    text = ' '.join(text)
-    if options.get('world'):
-      text += ' world'
-    print(text + '!')
+def shout(text: str):
+  'Shouts the given text back'
+  if options.get('world'):
+    text += ' world'
+  print(text + '!')
 
-cli = CLI()
-captain = Captain(cli)
+captain = Captain(shout, program='shout')
 captain.add_option(
   'world', ['world', 'w'],
   "Adds ' world' before the exclamation mark",
 )
 global options
-function, args, options = captain.parse()
-function(*args)
+args, options = captain.parse()
+shout(*args)
