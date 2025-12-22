@@ -1,11 +1,9 @@
-# Imports
-import requests
-
-
 # Deals with network downloads.
 class Cloud:
   # Downloads content from given link and returns it as bytes.
   def download(self, link: str, progress_function: callable = None) -> bytes:
+    import requests
+
     if progress_function:
       response = requests.get(link, stream=True)
       total_size = int(response.headers.get('content-length', default=0))
