@@ -89,17 +89,17 @@ class Typewriter:
   def stylise(
     self,
     style: Typewriter.Style or Typewriter.Colour or Typewriter.BackgroundColour,
-    *args,
+    *text,
   ):
-    if len(args) == 0:
+    if len(text) == 0:
       return ''
     reset = Typewriter.Style.RESET.value
-    args = [f'{style.value}{text}{reset}' for text in args]
-    n_args = len(args)
-    if n_args == 1:
-      return args[0]
+    text = [f'{style.value}{text}{reset}' for text in text]
+    n_texts = len(text)
+    if n_texts == 1:
+      return text[0]
     else:
-      return tuple(args)
+      return tuple(text)
 
   # Gets a string, makes it bold, returns the string.
   def bolden(self, *args):
@@ -159,6 +159,8 @@ class Typewriter:
       bar_width = max_bar_width
     # Calculating stuffs
     progress_float = done / todo
+    if progress_float > 1:
+      progress_float = 1
     percentage = str(int(progress_float * 100))
     percentage = percentage + '%' + (' ' * (3 - len(percentage)))
     # Outputting
