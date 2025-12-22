@@ -156,7 +156,10 @@ class Config:
       f'{title}\n{self.file}:\n{formatted_errors}',
       file=sys.stderr,
     )
-    sys.exit(os.EX_CONFIG)
+    if hasattr(os, 'EX_CONFIG'):
+      sys.exit(os.EX_CONFIG)
+    else:
+      sys.exit(78)
 
   # Reads the config and fills any missing values with the 'defaults' provided
   # during initialisation.

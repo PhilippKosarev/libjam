@@ -270,7 +270,7 @@ class Captain:
     if args is None:
       args = sys.argv[1:]
     # Categorising args
-    given_args, long_opts, short_opts = categorise_args(args)
+    args, long_opts, short_opts = categorise_args(args)
     # Parsing options and printing help if needed
     if self.add_help:
       self.add_option(
@@ -290,13 +290,13 @@ class Captain:
       function = self.ship
       command = None
     else:
-      if not given_args:
+      if not args:
         self.on_usage_error(
           'No command specified.\n'
           f"Try '{self.program} --help' for more information."
         )
       available_commands = get_object_commands(self.ship)
-      command = given_args.pop(0)
+      command = args.pop(0)
       function = available_commands.get(command)
       available_commands = ', '.join(available_commands.keys())
       if function is None:
@@ -314,24 +314,22 @@ class Captain:
         raise ParsingError(
           f"Function '{function_name}' of '{class_name}' is missing the 'self' parameter"
         )
-      given_args.insert(0, self.ship)
-    n_given_args = len(given_args)
+      args.insert(0, self.ship)
+    n_args = len(args)
     if required_args[-1][0] == '*':
-      if n_given_args < n_required_args - 1:
-        self.on_missing_arguments(
-          required_args[n_given_args : n_required_args - 1]
-        )
+      if n_args < n_required_args - 1:
+        self.on_missing_arguments(required_args[n_args : n_required_args - 1])
     else:
-      if n_given_args < n_required_args:
-        self.on_missing_arguments(required_args[n_given_args:])
-      if n_given_args > n_required_args:
+      if n_args < n_required_args:
+        self.on_missing_arguments(required_args[n_args:])
+      if n_args > n_required_args:
         self.on_usage_error('too many arguments.', command)
     # Returning
     return_list = []
     if not ship_callable:
-      return_list += [function, given_args]
+      return_list += [function, args]
     else:
-      return_list.append(given_args)
+      return_list.append(args)
     if parsed_options:
       return_list.append(parsed_options)
     if len(return_list) == 1:
@@ -363,7 +361,10 @@ class Captain:
     if command:
       prefix += ' ' + command + ':'
     print(prefix + ' ' + text, file=sys.stderr)
-    sys.exit(os.EX_USAGE)
+    if hasattr(os, 'EX_USAGE'):
+      sys.exit(os.EX_USAGE)
+    else:
+      sys.exit(64)
 
   def on_missing_arguments(self, missing_args: str, command: str = None):
     missing_args = to_posix_args(missing_args)
