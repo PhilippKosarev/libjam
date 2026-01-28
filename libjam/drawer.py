@@ -547,16 +547,17 @@ class Drawer:
     extract_location: str,
     progress_function: callable = None,
   ):
-    extract_functions = get_extract_functions()
+    if type(archive) is not bytes:
+      archive = realpath(archive)
+    extract_location = realpath(extract_location)
     archive_type = self.get_filetype(archive)
-    function = extract_functions.get(archive_type)
+    function = get_extract_functions().get(archive_type)
     if function is None:
       raise NotImplementedError(
         f"Archive type '{archive_type}' is not supported."
       )
-    archive = realpath(archive)
-    extract_location = realpath(extract_location)
-    return function(archive, extract_location, progress_function)
+    function(archive, extract_location, progress_function)
+    return outpath(extract_location)
 
   # Same as xdg-open, but platform-independent.
   def open(self, argument: str, is_path: bool = True) -> int:
