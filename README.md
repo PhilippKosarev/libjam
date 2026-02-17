@@ -3,20 +3,20 @@ A library jam for Python.
 
 ## Installing
 libjam is available on [PyPI](https://pypi.org/project/libjam/), and can be installed using pip.
-```
+```sh
 pip install libjam
-```
+```sh
 To install the latest bleeding edge:
-```
+```sh
 pip install git+https://github.com/philippkosarev/libjam.git
 ```
 
-## Modules
+## Submodules
 
 ### Captain
-Makes creating command line interfaces easy.
+Provides an easy, intuitive and boilerplate-free way of creating command line interfaces.
 
-#### Example CLI project:
+#### A simple CLI script:
 example.py:
 ```python
 #! /usr/bin/env python3
@@ -61,93 +61,68 @@ Options:
 ```
 
 ### Drawer
-Responsible for file operations. Accepts `/` as the file separator regardless the operating system.
+Provides a few missing pieces for file management.
 
-#### Example CLI for calculating filesizes
-mass.py:
+#### Example CLI for extracting any archive:
+extract.py:
 ```python
 #! /usr/bin/env python3
 
+# Imports
 from libjam import Captain, drawer, typewriter
-import sys
+import os, sys
 
-def print_progress(todo, done):
-  typewriter.print_progress('Calculating file size', todo, done)
+# Helper functions
+def eprint(*args, **kwargs):
+  print(*args, **kwargs, file=sys.stderr)
 
-def mass(*paths):
-  'Prints human-readable size of files'
-  if len(paths) == 0:
-    paths = ['./']
-  n_paths = len(paths)
-  results = {}
-  for i, path in enumerate(paths):
-    if n_paths > 1:
-      print_progress(i+1, n_paths)
-    if not drawer.exists(path):
-      typewriter.clear_lines(0)
-      print(f'{path}: No such file or directory.', file=sys.stderr)
-      continue
-    size = drawer.get_filesize(path)
-    results[path] = size
-  results = dict(sorted(results.items(), key=lambda item: item[1], reverse=True))
+# Main function
+def extract(archive: str, out_directory: str):
+  # Checking for errors
+  if not os.path.exists(archive):
+    captain.on_usage_error('file not found.')
+  if os.path.isdir(archive):
+    captain.on_usage_error('given archive is a directory.')
+  if not drawer.is_archive_supported(archive):
+    captain.on_usage_error('unsupported archive type.')
+  # Extracting
+  basename = os.path.basename(archive)
+  def progress_function(done: int, todo: int):
+    typewriter.print_progress(f"Extracting '{basename}'", done, todo)
+  drawer.extract_archive(archive, out_directory, progress_function)
   typewriter.clear_lines(0)
-  for file in results:
-    size = results.get(file)
-    size, units, _ = drawer.get_readable_filesize(size)
-    size = round(size, 1)
-    print(f'{file}: {size} {units.upper()}')
 
-captain = Captain(mass)
-
+# Running
 def main():
+  captain = Captain(extract)
   args = captain.parse()
-  try:
-    return mass(*args)
-  except KeyboardInterrupt:
-    print()
-    sys.exit(1)
+  return extract(*args)
 
 if __name__ == '__main__':
   sys.exit(main())
 ```
 
-Usage:
-```sh
-$ ./mass.py
-./: 100.9 MB
-
-$ ./mass.py downloads pictures videos
-videos: 34.7 GB
-downloads: 12.6 GB
-pictures: 2.2 GB
-
-$ ./mass.py -h
-Synopsis:
-  mass.py [OPTION]... [PATHS]...
-Description:
-  Prints human-readable size of files.
-Options:
-  -h, --help - Prints this page.
-```
-
 ### Typewriter
-Transforms text and prints to the terminal.
+Provides functions for formatting and printing text.
 
 ### Notebook
-Allows reading and writing `.toml`, `.ini` and `.json` files and provides an application configuration management system with the `Notebook.Ledger` class.
+Allows reading and writing toml, ini and json configuration files. Also provides a configuration management system via the `Notebook.Ledger` class.
 
-#### Example of an app configured through Notebook.Ledger:
+#### Example configuration for a program:
+config.py:
 ```py
 # Imports
-from libjam import notebook, drawer
+from pathlib import Path
+from libjam import notebook
 
 # Defining default values
-default_downloads_dir = drawer.absolute_path('~/Downloads')
-if not drawer.is_folder(default_downloads_dir):
+default_downloads_dir = Path.home() / 'Downloads'
+if not default_downloads_dir.is_dir():
   default_downloads_dir = None
 default_values = {
   'downloads-directory': default_downloads_dir,
 }
+
 # Config template
 template = '''\
 # An override for the default downloads directory
@@ -164,38 +139,36 @@ downloads_dir = config_dict.get('downloads-directory')
 if downloads_dir is None:
     config_obj.on_error(
       "Could not automatically find an existing Downloads directory. "
-      "Please specify 'downloads-directory' in the configuration manually."
+      "Please specify the 'downloads-directory' manually."
   )
-if not drawer.exists(downloads_dir):
-  config_obj.on_error("The specified 'downloads-directory' does not exist")
+downloads_dir = Path(downloads_dir)
+if not downloads_dir.is_dir():
+  config_obj.on_error("The specified 'downloads-directory' does not exist.")
 ```
 
-download_manager.py:
+cli.py:
 ```py
 #! /usr/bin/env python3
 
-# Imports
-import requests
+# Internal imports
+from .download_manager import DownloadManager
+from .config impxort downloads_dir
 
-# Getting downloads_dir from config
-from config import downloads_dir
+download_manager = DownloadManager(downloads_dir)
 
 # The rest of the program...
 ```
 
-Example output:
+Example error:
 ```sh
-$ ./download_manager.py
+$ ./cli.py
 Configuration error(s):
 /home/philipp/.config/download-manager/config.toml:
   - Could not automatically find an existing Downloads directory. Please specify 'downloads-directory' in the configuration manually.
 ```
 
-### Clipboard
-Provides a few list operations such as `deduplicate`.
-
 ### Flashcard
-Provides the `prompt_yn` function.
+Used for getting user input inside the terminal.
 
 ### Cloud
 Provides the `download` function.
