@@ -1,15 +1,14 @@
 # Imports
-import os
-import io
-import zipfile
-import tarfile
-import rarfile
-import py7zr
+from zipfile import ZipFile
+from tarfile import TarFile, TarInfo, data_filter as tar_data_filter
+from rarfile import RarFile
+from py7zr import SevenZipFile
+from py7zr.callbacks import ExtractCallback as SevenZipExtractCallback
 
 
 # Internal classes
 class JamTarFile:
-  def __init__(self, tar: tarfile.TarFile):
+  def __init__(self, tar: TarFile):
     self.tar = tar
     self.members = self.tar.getmembers()
     self.n_members = len(self.members)
@@ -18,30 +17,21 @@ class JamTarFile:
 
   @classmethod
   def open(cls, *args, **kwargs):
-    tar = tarfile.open(*args, **kwargs)
+    tar = TarFile.open(*args, **kwargs)
     return cls(tar)
 
-  def extractall(self, path: str, progress_function: callable = None):
-    self.extract_location = path
+  def extractall(self, dst, progress_function: callable = None):
     self.progress_function = progress_function
-    self.tar.extractall(path, filter=self.filter)
+    self.tar.extractall(dst, filter=self.filter)
 
-  def filter(
-    self, member: tarfile.TarInfo, path: str, /
-  ) -> tarfile.TarInfo | None:
+  def filter(self, member: TarInfo, dst) -> TarInfo | None:
     if self.progress_function:
       self.progress_function(self.extracted, self.n_members)
     self.extracted += 1
-    member = tarfile.data_filter(member, path)
-    if member:
-      if not self.archive_basename:
-        self.archive_basename = os.path.basename(member.name)
-      member.name = member.name.removeprefix(self.archive_basename)
-      member.name = self.extract_location + member.name
-    return member
+    return tar_data_filter(member, dst)
 
 
-class SevenZipCallbacks(py7zr.callbacks.ExtractCallback):
+class SevenZipJamCallback(SevenZipExtractCallback):
   def __init__(self, to_extract: int, progress_function: callable):
     self.extracted = 0
     self.to_extract = to_extract
@@ -55,7 +45,7 @@ class SevenZipCallbacks(py7zr.callbacks.ExtractCallback):
     self.extracted += 1
 
   def report_end(self, file, size):
-    pass
+    self.progress_function(self.extracted, self.to_extract)
 
   def report_postprocess(self):
     pass
@@ -69,8 +59,8 @@ class SevenZipCallbacks(py7zr.callbacks.ExtractCallback):
 
 # Extract functions
 def generic_extract(
-  archive_object: zipfile.ZipFile or rarfile.RarFile,
-  extract_location: str,
+  archive_object: ZipFile or RarFile,
+  dst,
   progress_function: callable = None,
 ):
   archived_files = archive_object.namelist()
@@ -80,92 +70,59 @@ def generic_extract(
     if progress_function:
       progress_function(extracted, to_extract)
     extracted += 1
-    archive_object.extract(archived_file, path=extract_location)
+    archive_object.extract(archived_file, path=dst)
+  if progress_function:
+    progress_function(extracted, to_extract)
 
 
-def extract_zip(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  if type(archive) is str:
-    archive = open(archive, 'rb').read()
-  archive_object = zipfile.ZipFile(io.BytesIO(archive))
-  generic_extract(archive_object, extract_location, progress_function)
+def extract_zip(fp, dst, progress_function: callable = None):
+  archive_object = ZipFile(fp)
+  generic_extract(archive_object, dst, progress_function)
 
 
-def extract_rar(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  if type(archive) is str:
-    archive = open(archive, 'rb').read()
-  archive_object = rarfile.RarFile(io.BytesIO(archive))
-  generic_extract(archive_object, extract_location, progress_function)
+def extract_rar(fp, dst, progress_function: callable = None):
+  archive_object = RarFile(fp)
+  generic_extract(archive_object, dst, progress_function)
 
 
 def generic_tar_extract(
-  archive: str or bytes,
-  archive_type: str,  # 'gz', 'xz' or ''
-  extract_location: str,
+  fp,
+  dst,
+  compression: str,  # should be 'gz', 'xz' or '',
   progress_function: callable = None,
 ):
-  if type(archive) is str:
-    archive = open(archive, 'rb').read()
-  if archive_type:
+  if compression:
     archive_object = JamTarFile.open(
-      mode=f'r:{archive_type}',
-      fileobj=io.BytesIO(archive),
+      mode=f'r:{compression}',
+      fileobj=fp,
     )
   else:
-    archive_object = JamTarFile.open(
-      mode='r',
-      fileobj=io.BytesIO(archive),
-    )
-  archive_object.extractall(extract_location, progress_function)
+    archive_object = JamTarFile.open(mode='r', fileobj=fp)
+  archive_object.extractall(dst, progress_function)
 
 
-def extract_tar(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  generic_tar_extract(archive, '', extract_location, progress_function)
+def extract_tar(fp, dst, progress_function: callable = None):
+  generic_tar_extract(fp, dst, '', progress_function)
 
 
-def extract_tar_gz(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  generic_tar_extract(archive, 'gz', extract_location, progress_function)
+def extract_tar_gz(fp, dst, progress_function: callable = None):
+  generic_tar_extract(fp, dst, 'gz', progress_function)
 
 
-def extract_tar_xz(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  generic_tar_extract(archive, 'xz', extract_location, progress_function)
+def extract_tar_xz(fp, dst, progress_function: callable = None):
+  generic_tar_extract(fp, dst, 'xz', progress_function)
 
 
-def extract_7z(
-  archive: str or bytes,
-  extract_location: str,
-  progress_function: callable = None,
-):
-  if type(archive) is str:
-    archive = open(archive, 'rb').read()
-  archive_object = py7zr.SevenZipFile(io.BytesIO(archive))
+def extract_7z(fp, dst, progress_function: callable = None):
+  archive_object = SevenZipFile(fp)
   archived_files = archive_object.namelist()
   to_extract = len(archived_files)
   if progress_function:
-    callback = SevenZipCallbacks(to_extract, progress_function)
+    callback = SevenZipJamCallback(to_extract, progress_function)
   else:
     callback = None
   archive_object.extract(
-    extract_location,
+    dst,
     recursive=True,
     callback=callback,
   )
