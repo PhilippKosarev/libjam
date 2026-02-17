@@ -126,6 +126,7 @@ def make_help_section(title: str, body: str or list) -> str:
     body = '  ' + body.replace('\n', '\n  ')
   else:
     assert len(body) % 2 == 0
+    body = [i if i else '' for i in body]
     for i in range(1, len(body), 2):
       string = body[i]
       if string:
@@ -316,7 +317,11 @@ class Captain:
         )
       args.insert(0, self.ship)
     n_args = len(args)
-    if required_args[-1][0] == '*':
+    accepts_arbitrary_args = False
+    if n_required_args > 0:
+      if required_args[-1][0] == '*':
+        accepts_arbitrary_args = True
+    if accepts_arbitrary_args:
       if n_args < n_required_args - 1:
         self.on_missing_arguments(required_args[n_args : n_required_args - 1])
     else:
