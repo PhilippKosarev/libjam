@@ -50,8 +50,8 @@ def _statdir(directory) -> tuple[list[tuple[os.DirEntry, bool, int]], int]:
   return items, total_size
 
 
-def copy_file_with_progress(src, dst, progress_callback: callable):
-  """Copies given file while providing current progress."""
+def copy_with_progress(src, dst, progress_callback: callable):
+  """Copies the given file while providing current progress."""
   buffer_size = shutil.COPY_BUFSIZE
   filesize = os.stat(src).st_size
   n_buffers = math.ceil(filesize / buffer_size)
@@ -63,8 +63,8 @@ def copy_file_with_progress(src, dst, progress_callback: callable):
     progress_callback(approximated_filesize, approximated_filesize)
 
 
-def copy_dir_with_progress(src, dst, progress_callback: callable):
-  """Copies given directory while providing current progress."""
+def copy_tree_with_progress(src, dst, progress_callback: callable):
+  """Copies the given directory while providing current progress."""
   queue, total_size = _statdir(src)
   bytes_copied = 0
 
@@ -78,13 +78,13 @@ def copy_dir_with_progress(src, dst, progress_callback: callable):
     if is_dir:
       os.mkdir(entry_dst)
     else:
-      copy_file_with_progress(entry, entry_dst, subprogress_callback)
+      copy_with_progress(entry, entry_dst, subprogress_callback)
     bytes_copied += size
   progress_callback(bytes_copied, total_size)
 
 
-def unlink_dir_with_progress(directory, progress_callback: callable):
-  """Deletes a given directory while providing current progress."""
+def unlink_tree_with_progress(directory, progress_callback: callable):
+  """Deletes the given directory while providing current progress."""
   bytes_deleted = 0
   queue, total_size = _statdir(directory)
   queue.reverse()
@@ -99,17 +99,17 @@ def unlink_dir_with_progress(directory, progress_callback: callable):
   progress_callback(bytes_deleted, total_size)
 
 
-def get_dir_size(directory) -> int:
-  """Returns the size of a given directory in bytes."""
+def get_tree_size(directory) -> int:
+  """Returns the size of the given directory in bytes."""
   total_size = 0
   for entry in os.scandir(directory):
     total_size += entry.stat().st_size
     if entry.is_dir():
-      total_size += get_dir_size(entry)
+      total_size += get_tree_size(entry)
   return total_size
 
 
-def get_readable_filesize(
+def to_readable_size(
   size: int,
   ndigits: int or None = 1,
 ) -> tuple[float, str, str]:
@@ -144,18 +144,18 @@ def get_readable_filesize(
   return (size,) + units
 
 
-def is_archive_supported(archive) -> bool:
+def can_be_extracted(file) -> bool:
   """Checks whether extraction of the given archive is supported.
 
-  The `archive` can be a path to file, bytes, bytesarray or a file-like object.
+  The `file` can be a path to file, bytes, bytesarray or a file-like object.
   """
-  extension = filetype.guess_extension(archive)
+  extension = filetype.guess_extension(file)
   supported = list(_get_extract_functions().keys())
   return extension in supported
 
 
-def extract_archive(src, dst, progress_callback: callable = None):
-  """Extracts the given archive to a specified destination.
+def extract(src, dst, progress_callback: callable = None):
+  """Extracts the given archive into the specified directory.
 
   The `src` can be a path to file, bytes, bytesarray or a file-like object.
   The `dst` has to be a path that leads to a directory.
