@@ -1,11 +1,9 @@
 # Imports
-import sys
 import os
+import sys
 
 # Internal imports
-from .typewriter import Typewriter
-
-typewriter = Typewriter()
+from . import typewriter
 
 
 # Exceptions
