@@ -141,13 +141,6 @@ def print_status(*args, **kwargs):
   print('', *args, **kwargs)
 
 
-# Clears current line to print a new one.
-# Common usecase: after print_status()
-def print(*args, **kwargs):
-  clear_lines(0)
-  print(*args, **kwargs)
-
-
 # Clears the current line and prints the progress bar on the same line.
 def print_progress(
   status: str,
@@ -231,30 +224,3 @@ def list_to_columns(
       row[i] += ' ' * (column_widths[i] - len(row[i]))
     strings.append(' ' * offset + (' ' * spacing).join(row))
   return '\n'.join(strings)
-
-
-# Returns a box of specified size (2 chars bigger on every side due to borders).
-def get_box(
-  width: int,
-  height: int,
-  style: BoxCharacters,
-) -> str:
-  straights, corners, intersections = style.value
-  lines = []
-  # Top
-  lines.append(corners[0] + straights[0] * width + corners[1])
-  # Middle
-  midlines = [straights[1] + ' ' * width + straights[1]] * height
-  lines.append('\n'.join(midlines))
-  # Bottom
-  lines.append(corners[2] + straights[0] * width + corners[3])
-  return '\n'.join(lines)
-
-
-# Draws a box of specified size (2 chars bigger on every side due to borders).
-def draw_box(
-  width: int,
-  height: int,
-  style: BoxCharacters,
-):
-  print(get_box(width, height, style))
