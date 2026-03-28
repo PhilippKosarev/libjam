@@ -2,7 +2,6 @@
 
 # Imports
 import os
-import io
 import sys
 import math
 import shutil
@@ -10,30 +9,6 @@ import filetype
 import subprocess
 
 
-# An internal function.
-def _get_extract_functions() -> dict[str:callable]:
-  """Returns a dict where the file extension points to a function."""
-  from .extract_functions import (
-    extract_zip,
-    extract_rar,
-    extract_tar,
-    extract_tar_gz,
-    extract_tar_xz,
-    extract_7z,
-  )
-
-  extract_functions = {
-    'zip': extract_zip,
-    'rar': extract_rar,
-    'tar': extract_tar,
-    'gz': extract_tar_gz,
-    'xz': extract_tar_xz,
-    '7z': extract_7z,
-  }
-  return extract_functions
-
-
-# An internal function.
 def _statdir(directory) -> tuple[list[tuple[os.DirEntry, bool, int]], int]:
   total_size = 0
   items = []
@@ -144,40 +119,6 @@ def to_readable_size(
   return (size,) + units
 
 
-def can_be_extracted(file) -> bool:
-  """Checks whether extraction of the given archive is supported.
-
-  The `file` can be a path to file, bytes, bytesarray or a file-like object.
-  """
-  extension = filetype.guess_extension(file)
-  supported = list(_get_extract_functions().keys())
-  return extension in supported
-
-
-def extract(src, dst, progress_callback: callable = None):
-  """Extracts the given archive into the specified directory.
-
-  The `src` can be a path to file, bytes, bytesarray or a file-like object.
-  The `dst` has to be a path that leads to a directory.
-  """
-  extension = filetype.guess_extension(src)
-  functions = _get_extract_functions()
-  function = functions.get(extension)
-  if not function:
-    raise NotImplementedError(f"Unsupported archive type '{extension}'")
-  src_type = type(src)
-  if hasattr(src, '__fspath__') or src_type is str:
-    with open(src, 'rb') as fp:
-      function(fp, dst, progress_callback)
-  elif src_type in (bytes, bytearray):
-    with io.BytesIO(src) as fp:
-      function(fp, dst, progress_callback)
-  elif hasattr(src, 'read'):
-    function(src, dst, progress_callback)
-  else:
-    raise TypeError('Invalid `archive` type')
-
-
 def start(*args) -> int:
   """Like xdg-open, but platform-aware."""
   commands = {
@@ -191,3 +132,241 @@ def start(*args) -> int:
     raise NotImplementedError(f"Unsupported platform '{sys.platform}'")
   process = subprocess.run([command, *args], check=True)
   return process.returncode
+
+def _generic_pack(src, dst, cls, write_func_name: str):
+  if not os.path.exists(src):
+    FileNotFoundError('File not found', src)
+  if not os.path.isdir(src):
+    NotADirectoryError('Not a directory', src)
+  with cls(dst, 'w') as file:
+    write = getattr(file, write_func_name)
+    if os.path.isdir(src):
+      for root, dirs, files in os.walk(src):
+        for name in files:
+          path = os.path.join(root, name)
+          name = os.path.relpath(path, src)
+          write(path, name)
+    else:
+      name = os.path.basename(src)
+      write(src, name)
+
+
+def _generic_pack_with_progress(
+  src,
+  dst,
+  progress_callback: callable,
+  cls,
+  write_func_name: str,
+):
+  if not os.path.exists(src):
+    FileNotFoundError('File not found', src)
+  if not os.path.isdir(src):
+    NotADirectoryError('Not a directory', src)
+  files = []
+  for root, dirnames, filenames in os.walk(src):
+    for name in filenames:
+      path = os.path.join(root, name)
+      files.append(path)
+  n_files = len(files)
+  packed = 0
+  with cls(dst, 'w') as file:
+    write = getattr(file, write_func_name)
+    for path in files:
+      progress_callback(packed, n_files)
+      name = os.path.relpath(path, src)
+      write(path, name)
+      packed += 1
+    progress_callback(packed, n_files)
+
+
+def _generic_unpack(src, dst, cls):
+  with cls(src) as obj:
+    obj.extractall(dst)
+
+
+def _generic_unpack_with_progress(
+  src,
+  dst,
+  progress_callback: callable,
+  cls,
+  namelist_function_name: str,
+):
+  with cls(src) as obj:
+    namelist = getattr(obj, namelist_function_name)
+    names = namelist()
+    n_names = len(names)
+    unpacked = 0
+    for name in names:
+      progress_callback(unpacked, n_names)
+      obj.extract(name, dst)
+      unpacked += 1
+    progress_callback(unpacked, n_names)
+
+
+def pack_zip(src, dst):
+  """Packs the given directory to a zip file."""
+  from zipfile import ZipFile
+  _generic_pack(src, dst, ZipFile, 'write')
+
+
+def pack_zip_with_progress(src, dst, progress_callback: callable):
+  """Packs the given directory to a zip file while providing the
+  current progress.
+  """
+  from zipfile import ZipFile
+  _generic_pack_with_progress(
+    src, dst,
+    progress_callback,
+    ZipFile, 'write'
+  )
+
+
+def unpack_zip(src, dst):
+  """Unpacks the given zip archive to the specified directory."""
+  from zipfile import ZipFile
+  _generic_unpack(src, dst, ZipFile)
+
+
+def unpack_zip_with_progress(src, dst, progress_callback: callable):
+  """Unpacks the given zip archive to the specified directory while
+  providing current progress.
+  """
+  from zipfile import ZipFile
+  _generic_unpack_with_progress(
+    src,
+    dst,
+    progress_callback,
+    ZipFile,
+    'namelist',
+  )
+
+
+def pack_7z(src, dst):
+  """Packs the given directory to a 7zip file."""
+  from py7zr import SevenZipFile
+  _generic_pack(src, dst, SevenZipFile, 'write')
+
+
+def pack_7z_with_progress(src, dst, progress_callback: callable):
+  from py7zr import SevenZipFile
+  _generic_pack_with_progress(
+    src, dst,
+    progress_callback,
+    SevenZipFile, 'write'
+  )
+
+
+def unpack_7z(src, dst):
+  """Unpacks the given 7zip archive to the specified directory."""
+  from py7zr import SevenZipFile
+  _generic_unpack(src, dst, SevenZipFile)
+
+
+def unpack_7z_with_progress(src, dst, progress_callback: callable):
+  """Unpacks the given tar archive to the specified directory while
+  providing current progress.
+  """
+  from py7zr import SevenZipFile, callbacks
+  class Callback(callbacks.ExtractCallback):
+    def __init__(self, todo: int):
+      self.todo = todo
+      self.done = 0
+
+    def report_start_preparation(self):
+      progress_callback(self.done, self.todo)
+
+    def report_start(self, file, size):
+      progress_callback(self.done, self.todo)
+      self.done += 1
+
+    def report_end(self, file, size):
+      progress_callback(self.done, self.todo)
+
+    def report_postprocess(self):
+      pass
+
+    def report_update(self, size):
+      pass
+
+    def report_warning(self, message):
+      pass
+
+  with SevenZipFile(src) as obj:
+    to_unpack = len(obj.namelist())
+    callback = Callback(to_unpack)
+    obj.extractall(dst, callback=callback)
+
+
+def unpack_rar(src, dst):
+  """Unpacks the given rar archive to the specified directory."""
+  from rarfile import RarFile
+  _generic_unpack(src, dst, RarFile)
+
+
+def unpack_rar_with_progress(src, dst, progress_callback: callable):
+  """Unpacks the given tar archive to the specified directory while
+  providing current progress.
+  """
+  from rarfile import RarFile
+  _generic_unpack_with_progress(
+    src,
+    dst,
+    progress_callback,
+    RarFile,
+    'namelist',
+  )
+
+
+_unpack_functions = {
+  'zip': unpack_zip,
+  '7z': unpack_7z,
+  'rar': unpack_rar,
+}
+
+_unpack_with_progress_functions = {
+  'zip': unpack_zip_with_progress,
+  '7z': unpack_7z_with_progress,
+  'rar': unpack_rar_with_progress,
+}
+
+
+def can_be_unpacked(archive) -> bool:
+  """Checks if the given archive can be unpacked."""
+  ext = filetype.guess_extension(archive)
+  function = _unpack_functions.get(ext)
+  return function is None
+
+
+def unpack(src, dst):
+  """Unpacks the given archive to the specified directory.
+
+  If the archive type is not supported `NotImplementedError` is raised.
+  """
+  ext = filetype.guess_extension(src)
+  if not ext:
+    raise NotImplementedError(
+      f"Unable to determine file extension of {src}"
+    )
+  function = _unpack_functions.get(ext)
+  if not function:
+    raise NotImplementedError(
+      f"Unsupported archive type '{ext}'"
+    )
+  function(src, dst)
+
+
+def unpack_with_progress(src, dst, progress_callback: callable):
+  """Unpacks the given archive to the specified directory while providing
+  current progress.
+
+  If the archive type is not supported `NotImplementedError` is raised.
+  """
+  ext = filetype.guess_extension(src)
+  if not ext:
+    raise ValueError(
+      f"Unable to determine file extension of {src}"
+    )
+  function = _unpack_with_progress_functions.get(ext)
+  if not function:
+    raise NotImplementedError(f"Unsupported filetype {ext}")
+  function(src, dst, progress_callback)
