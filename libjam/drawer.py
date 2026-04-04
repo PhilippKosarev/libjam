@@ -334,7 +334,7 @@ def can_be_unpacked(archive) -> bool:
   """Checks if the given archive can be unpacked."""
   ext = filetype.guess_extension(archive)
   function = _unpack_functions.get(ext)
-  return function is None
+  return function is not None
 
 
 def unpack(src, dst):
