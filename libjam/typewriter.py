@@ -3,7 +3,7 @@
 # Imports
 from __future__ import annotations
 from enum import Enum
-import shutil
+import os
 
 # Shorthand vars
 CLEAR = '\x1b[2K'
@@ -96,11 +96,6 @@ def rgb_to_escape_sequence(red: int, green: int, blue: int) -> str:
   return escape_seq(f'38;2;{red};{green};{blue}')
 
 
-# Returns current terminal width and height (columns and lines) as a tuple.
-def get_terminal_size() -> tuple[int, int]:
-  return tuple(shutil.get_terminal_size())
-
-
 # Clears a given number of lines in the terminal.
 # If the specified number of lines is 0 then the current line will be erased.
 def clear_lines(lines: int):
@@ -129,7 +124,7 @@ def print_progress(
   # Getting maximum bar width
   min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
   end_padding = 5
-  bar_width = get_terminal_size()[0] - min_width - end_padding
+  bar_width = os.get_terminal_size()[0] - min_width - end_padding
   if bar_width > max_bar_width:
     bar_width = max_bar_width
   # Calculating stuffs
@@ -166,7 +161,7 @@ def list_to_columns(
   sorted_text_list = sorted(text_list, key=len, reverse=True)
   # Getting n_columns
   if n_columns == 0:
-    available_width = shutil.get_terminal_size()[0] - offset
+    available_width = os.get_terminal_size()[0] - offset
     counter = 0
     while True:
       texts = sorted_text_list[:counter]
