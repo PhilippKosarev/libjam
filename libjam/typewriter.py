@@ -1,8 +1,6 @@
-"""Provides useful formatting and printing functions."""
+"""Provides functionality for making fancy terminal output."""
 
 # Imports
-from __future__ import annotations
-from enum import Enum
 import os
 
 # Constants
@@ -62,89 +60,85 @@ clear_line_before_cursor = ClearSequence('K', 1)
 clear_line = ClearSequence('K', 2)
 
 
-def escape_seq(text: str):
-  return f'\033[{text}m'
+# Style sequences (SGR)
+class Style(str):
+  def __new__(cls, start, end = ''):
+    start = f'{ESC}{start}m'
+    if end:
+      end = f'{ESC}{end}m'
+    new = str.__new__(cls, start)
+    new._end = end
+    return new
+
+  def __add__(self, seq: Style) -> Style:
+    start = f"{self}{seq}"
+    end = f"{self._end}{seq}"
+    new = str.__new__(Style, start)
+    new._end = end
+    return new
+
+  def __call__(self, s) -> str:
+    return f'{self}{s}{self._end}'
 
 
-class Style(Enum):
-  RESET = escape_seq(0)
-  INVERT = escape_seq(7)
-  BOLD = escape_seq(1)
-  UNDERLINE = escape_seq(4)
-  OVERLINE = escape_seq(53)
-  BLINKING = escape_seq(5)
-  HIDDEN = escape_seq(8)
-  THROUGHLINE = escape_seq(9)
+# Typographic styles
+reset = Style(0, 0)
+bold = Style(1, 22)
+dim = Style(2, 22)
+italic = Style(3, 23)
+underline = Style(4, 24)
+blink = Style(5, 25)
+invert = Style(7, 27)
+hide = Style(8, 28)
+strike = Style(9, 29)
+# Regular colours
+default = Style(39, 39)
+black = Style(30, 39)
+red = Style(31, 39)
+green = Style(32, 39)
+yellow = Style(33, 39)
+blue = Style(34, 39)
+purple = Style(35, 39)
+cyan = Style(36, 39)
+white = Style(37, 39)
+# Regular background colours
+on_default = Style(49, 49)
+on_black = Style(40, 49)
+on_red = Style(41, 49)
+on_green = Style(42, 49)
+on_yellow = Style(43, 49)
+on_blue = Style(44, 49)
+on_purple = Style(45, 49)
+on_cyan = Style(46, 49)
+on_white = Style(47, 49)
+# Bright colours
+bright_black = Style(90, 39)
+bright_red = Style(91, 39)
+bright_green = Style(92, 39)
+bright_yellow = Style(93, 39)
+bright_blue = Style(94, 39)
+bright_purple = Style(95, 39)
+bright_cyan = Style(96, 39)
+bright_white = Style(97, 39)
+# Bright background colours
+on_bright_black = Style(100, 49)
+on_bright_red = Style(101, 49)
+on_bright_green = Style(102, 49)
+on_bright_yellow = Style(103, 49)
+on_bright_blue = Style(104, 49)
+on_bright_purple = Style(105, 49)
+on_bright_cyan = Style(106, 49)
+on_bright_white = Style(107, 49)
 
 
-class Colour(Enum):
-  DEFAULT = escape_seq(39)
-  WHITE = escape_seq(37)
-  BLACK = escape_seq(30)
-  RED = escape_seq(31)
-  GREEN = escape_seq(32)
-  BLUE = escape_seq(34)
-  MAGENTA = escape_seq(35)
-  YELLOW = escape_seq(33)
-  CYAN = escape_seq(36)
-  BRIGHT_WHITE = escape_seq(97)
-  BRIGHT_BLACK = escape_seq(90)
-  BRIGHT_RED = escape_seq(91)
-  BRIGHT_GREEN = escape_seq(92)
-  BRIGHT_BLUE = escape_seq(94)
-  BRIGHT_MAGENTA = escape_seq(95)
-  BRIGHT_YELLOW = escape_seq(93)
-  BRIGHT_CYAN = escape_seq(96)
+def rgb(r: int, g: int, b: int) -> Style:
+  """Creates a colour Style for given rgb values."""
+  return Style(f'38;2;{r};{g};{b}', 39)
 
 
-class BackgroundColour(Enum):
-  DEFAULT = escape_seq(49)
-  WHITE = escape_seq(47)
-  BLACK = escape_seq(40)
-  RED = escape_seq(41)
-  GREEN = escape_seq(42)
-  BLUE = escape_seq(44)
-  MAGENTA = escape_seq(45)
-  YELLOW = escape_seq(43)
-  CYAN = escape_seq(46)
-  BRIGHT_WHITE = escape_seq(107)
-  BRIGHT_BLACK = escape_seq(100)
-  BRIGHT_RED = escape_seq(101)
-  BRIGHT_GREEN = escape_seq(102)
-  BRIGHT_BLUE = escape_seq(104)
-  BRIGHT_MAGENTA = escape_seq(105)
-  BRIGHT_YELLOW = escape_seq(103)
-  BRIGHT_CYAN = escape_seq(106)
-
-
-# Applies a specified style to a string(s).
-def stylise(
-  style: Style or Colour or BackgroundColour,
-  *text,
-):
-  if len(text) == 0:
-    return ''
-  text = [f'{style.value}{text}{Style.RESET.value}' for text in text]
-  n_texts = len(text)
-  if n_texts == 1:
-    return text[0]
-  else:
-    return tuple(text)
-
-
-# Gets a string, makes it bold, returns the string.
-def bolden(*text):
-  return stylise(Style.BOLD, *text)
-
-
-# # Gets a string, underlines it, returns the string.
-def underline(*text):
-  return stylise(Style.UNDERLINE, *text)
-
-
-# Gets RGB values, returns escape sequence to print with that colour in the terminal.
-def rgb_to_escape_sequence(red: int, green: int, blue: int) -> str:
-  return escape_seq(f'38;2;{red};{green};{blue}')
+def on_rgb(r: int, g: int, b: int) -> Style:
+  """Creates a background colour Style for given rgb values."""
+  return Style(f'48;2;{r};{g};{b}', 49)
 
 
 # Clears a given number of lines in the terminal.

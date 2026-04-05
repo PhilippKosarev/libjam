@@ -10,10 +10,12 @@ except ModuleNotFoundError:
 from . import typewriter
 
 
-def yn_prompt(question: str) -> bool:
+def yn_prompt(prompt: str, prompt_style: typewriter.Style or callable = None) -> bool:
+  prompt = '{prompt} [y/n]: '
+  if prompt_style:
+    prompt = prompt_style(prompt)
   while True:
-    user_input = input(f'{question} [y/n]: ')
-    user_input = user_input.strip().lower()
+    user_input = input(prompt).strip().lower()
     if user_input in ('y', 'yes'):
       return True
     elif user_input in ('n', 'no'):
@@ -23,22 +25,17 @@ def yn_prompt(question: str) -> bool:
 def choose(
   prompt: str,
   items: list[str],
-  *prompt_styles: typewriter.Style
-  or typewriter.Colour
-  or typewriter.BackgroundColour,
-) -> str:
-  n_items = len(items)
+  prompt_style: typewriter.Style or callable = typewriter.bold,
+) -> str or None:
   # Creating the prompt
-  prompt = f'{prompt} (1-{n_items}, 0 to abort):'
-  for style in prompt_styles:
-    prompt = typewriter.stylise(style, prompt)
-  prompt += ' '
+  n_items = len(items)
+  prompt = '{prompt} (1-{n_items}, 0 to abort): '
+  if prompt_style:
+    prompt_style(prompt)
   # Printing available items
-  printable_items = []
-  for i, item in enumerate(items, start=1):
-    printable_items.append(f'{i}) {item}')
-  printable_items = typewriter.list_to_columns(printable_items, spacing=2)
-  print(printable_items + '\n')
+  items = [f'{i}) {item}' for i, item in enumerate(items, start=1)]
+  items = typewriter.list_to_columns(items, spacing=2)
+  print(items + '\n')
   # Getting user input
   while True:
     choice = input(prompt).strip()
