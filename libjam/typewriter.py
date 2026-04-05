@@ -66,29 +66,6 @@ class BackgroundColour(Enum):
   BRIGHT_CYAN = escape_seq(106)
 
 
-class BoxCharacters(Enum):
-  STRAIGHT = (
-    '─│',
-    '┌┐└┘',
-    '┴┬├┤┼',
-  )
-  ROUND = (
-    '─│',
-    '╭╮╰╯',
-    '┴┬├┤┼',
-  )
-  BOLD = (
-    '━┃',
-    '┏┓┗┛',
-    '┻┳┣┫╋',
-  )
-  DOUBLE = (
-    '═║',
-    '╔╗╚╝',
-    '╩╦╠╣╬',
-  )
-
-
 # Applies a specified style to a string(s).
 def stylise(
   style: Style or Colour or BackgroundColour,
