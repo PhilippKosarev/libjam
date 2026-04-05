@@ -5,12 +5,63 @@ from __future__ import annotations
 from enum import Enum
 import os
 
-# Shorthand vars
-CLEAR = '\x1b[2K'
-CURSOR_UP = '\033[1A'
+# Constants
+ESC = '\x1B['
 
 
-# Helper functions
+# General control codes (C0)
+class ControlCode(str):
+  """A string that prints itself when called."""
+  def __call__(self, file=None, flush=False):
+    print(self, end='', file=file, flush=flush)
+
+
+bell = ControlCode('\a')
+back = ControlCode('\b')
+home = ControlCode('\r')
+tab = ControlCode('\t')
+
+
+# Navigation sequences (CSI commands)
+class NavigationSequence(str):
+  def __new__(cls, char: str):
+    new = str.__new__(cls, f'{ESC}1{char}')
+    new._char = char
+    return new
+
+  def __call__(self, n: int = 1, file=None, flush=False) -> str:
+    print(f'{ESC}{n}{self._char}', end='', file=file, flush=flush)
+
+
+up = NavigationSequence('A')
+down = NavigationSequence('B')
+right = NavigationSequence('C')
+left = NavigationSequence('D')
+next_line = NavigationSequence('E')
+prev_line = NavigationSequence('F')
+view_up = NavigationSequence('S')
+view_down = NavigationSequence('T')
+
+
+# Clear sequences (CSI commands)
+class ClearSequence(ControlCode):
+  """A string that clears some part of the screen."""
+  def __new__(cls, char: str, n: int):
+    return str.__new__(cls, f'{ESC}{n}{char}')
+
+  def __call__(self, file=None, flush=False):
+    print(self, end='', file=file, flush=flush)
+
+
+clear_page_after_cursor = ClearSequence('J', 0)
+clear_page_before_cursor = ClearSequence('J', 1)
+clear_page = ClearSequence('J', 2)
+clear_history = ClearSequence('J', 3)
+clear_line_after_cursor = ClearSequence('K', 0)
+clear_line_before_cursor = ClearSequence('K', 1)
+clear_line = ClearSequence('K', 2)
+
+
 def escape_seq(text: str):
   return f'\033[{text}m'
 
@@ -97,20 +148,15 @@ def rgb_to_escape_sequence(red: int, green: int, blue: int) -> str:
 
 
 # Clears a given number of lines in the terminal.
-# If the specified number of lines is 0 then the current line will be erased.
-def clear_lines(lines: int):
-  if lines == 0:
-    print('\r' + CLEAR, end='')
-    return
-  for line in range(lines):
-    print(CLEAR, end=CURSOR_UP)
+def clear_lines(n_lines: int, file=None, flush=False):
+  buff = [clear_line for _ in range(n_lines)]
+  buff = up.join(buff)
+  print(buff, end='', file=file, flush=flush)
 
 
 # Prints on the same line.
-def print_status(*args, **kwargs):
-  kwargs.setdefault('end', '\r')
-  clear_lines(0)
-  print('', *args, **kwargs)
+def print_status(status: str, file=None, flush=False):
+  print(f'{clear_line} {status}\r', end='', file=file, flush=flush)
 
 
 # Clears the current line and prints the progress bar on the same line.
