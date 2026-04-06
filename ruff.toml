@@ -1,9 +1,8 @@
-respect-gitignore = true
 include = ["libjam/*"]
 exclude = ["libjam/__init__.py"]
-
-line-length = 80
+respect-gitignore = true
 indent-width = 2
+target-version = "py314"
 
 [format]
 indent-style = "space"

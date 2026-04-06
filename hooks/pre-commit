@@ -5,10 +5,7 @@ bold=$(tput bold)
 normal=$(tput sgr0)
 
 # Checking for potential errors
-staged_files=($(git diff --staged --name-only | grep "\.py"))
-check_command="ruff --config ruff.toml check ${staged_files[*]}"
-printf "Checking for potential errors: "
-$check_command
+ruff --config ruff.toml check
 status=$?
 if [[ $status == "127" ]]; then
   echo "${bold}
