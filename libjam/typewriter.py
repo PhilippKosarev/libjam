@@ -187,52 +187,50 @@ def print_progress(
   print_status(result)
 
 
-# Returns a string with elements of the list arranged in in columns.
-def list_to_columns(
-  text_list: list,
+def to_columns(
+  items: list[str],
   n_columns: int = 0,
-  offset: int = 2,
-  spacing: int = 1,
+  column_sep: str = '  ',
+  prefix: str = '  ',
 ) -> str:
-  text_list_len = len(text_list)
-  if text_list_len == 0:
-    return ''
-  text_list = [str(text) for text in text_list]
-  sorted_text_list = sorted(text_list, key=len, reverse=True)
-  # Getting n_columns
-  if n_columns == 0:
-    available_width = os.get_terminal_size()[0] - offset
-    counter = 0
-    while True:
-      texts = sorted_text_list[:counter]
-      if counter == text_list_len:
-        n_columns = counter
+  """Arranges given items in columns.
+
+  If `n_columns` is not set, it will be calculated based on the size
+  of the terminal.
+  """
+  items = [str(item) for item in items]
+  items_by_len = sorted(items, key=len, reverse=True)
+  n_items = len(items)
+  # Calculating n_columns
+  if not n_columns:
+    available_width = os.get_terminal_size()[0] - len(prefix)
+    n_columns = 1
+    for i in range(2, n_items + 2):
+      selected_items = items_by_len[:i]
+      text = column_sep.join(selected_items)
+      if len(text) > available_width:
+        n_columns = i - 1
         break
-      if len((' ' * spacing).join(texts)) > available_width:
-        n_columns = counter - 1
-        break
-      counter += 1
-    if n_columns < 1:
-      n_columns = 1
-  columns_range = range(n_columns)
-  # Getting columns
-  columns = [[] for i in columns_range]
-  for i in columns_range:
-    columns[i] += text_list[i::n_columns]
-  columns = [column for column in columns if len(column) > 0]
-  # Getting column widths
-  column_widths = []
-  for column in columns:
-    column_widths.append(len(sorted(column, key=len, reverse=True)[0]))
-  # Combining rows to string
-  n_rows = len(columns[0])
-  strings = []
+    else:
+      n_columns = n_items
+  # Making a list of columns, equalising string length in each column
+  # and adding a separator between columns
+  columns = [items[i::n_columns] for i in range(n_columns)]
+  for i, column in enumerate(columns[:n_columns - 1]):
+    column_width = len(max(column, key=len))
+    for j, item in enumerate(column):
+      columns[i][j] = item + ' ' * (column_width - len(item)) + column_sep
+  # Adding the prefix to the first column
+  for i, item in enumerate(columns[0] if columns else []):
+    columns[0][i] = prefix + item
+  # Combining into a string
+  n_rows = len(columns[0]) if columns else 0
+  lines = []
   for i in range(n_rows):
-    start = n_columns * i
-    end = start + n_columns
-    row = text_list[start:end]
-    # Equalising row width
-    for i in range(len(row)):
-      row[i] += ' ' * (column_widths[i] - len(row[i]))
-    strings.append(' ' * offset + (' ' * spacing).join(row))
-  return '\n'.join(strings)
+    line = []
+    for column in columns:
+      if i < len(column):
+        line.append(column[i])
+    line = ''.join(line)
+    lines.append(line)
+  return '\n'.join(lines)

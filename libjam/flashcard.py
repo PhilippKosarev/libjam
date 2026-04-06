@@ -34,7 +34,7 @@ def choose(
     prompt_style(prompt)
   # Printing available items
   items = [f'{i}) {item}' for i, item in enumerate(items, start=1)]
-  items = typewriter.list_to_columns(items, spacing=2)
+  items = typewriter.to_columns(items)
   print(items + '\n')
   # Getting user input
   while True:

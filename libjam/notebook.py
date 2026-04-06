@@ -126,21 +126,13 @@ class Config:
     except Exception as e:
       self.on_error(str(e))
 
-  def on_error(self, error: str or list[str]):
-    error_type = type(error)
-    if error_type not in (str, list):
-      raise TypeError(f"Invalid error type '{error_type}'")
-    if error_type is str:
-      title = f"Configuration error in '{self.file}':"
-      error = [error]
-    title = typewriter.stylise(
-      typewriter.Colour.BRIGHT_RED,
-      'Configuration error(s):',
-    )
-    title = typewriter.bolden(title)
-    errors = [f'- {e}' for e in error]
-    errors = typewriter.list_to_columns(errors, n_columns=1)
-    print(f'{title}\n{self.file}:\n{errors}', file=sys.stderr)
+  def on_error(self, e: str or list[str]):
+    if isinstance(e, str):
+      e = [e]
+    title_style = typewriter.bright_red + typewriter.bold
+    title = title_style('Configuration error(s):')
+    body = typewriter.to_columns(e, n_columns=1, prefix='  - ')
+    print(f'{title}\n{self.file}:\n{body}', file=sys.stderr)
     exit_code = getattr(os, 'EX_CONFIG', None)
     if exit_code is None:
       exit_code = 78

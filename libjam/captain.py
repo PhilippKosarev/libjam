@@ -71,12 +71,13 @@ def to_posix_args(
   return ' '.join(all_args)
 
 
-def dict_to_table(d: dict[str: str|None]) -> str:
+def _dict_to_table(d: dict[str: str|None]) -> str:
+  """Creates a help page table from the given dictionary."""
   items = []
   for key, value in d.items():
-    value = '- ' + value if value else ''
+    value = ' - ' + value if value else ''
     items += [key, value]
-  return typewriter.list_to_columns(items, n_columns=2, offset=0)
+  return typewriter.to_columns(items, 2, '', '')
 
 
 # Captain is a tool for making CLIs quickly. It works by constructing a CLI
@@ -284,7 +285,7 @@ class Captain:
       commands_table = {}
       for command, function in commands.items():
         commands_table[command] = function.__doc__
-      commands_table = dict_to_table(commands_table)
+      commands_table = _dict_to_table(commands_table)
       sections.append(('Commands', commands_table))
       # Adding usage
       usage = []
@@ -304,7 +305,7 @@ class Captain:
       short_flags = ['-' + flag for flag in option.get('short')]
       flags = ', '.join(short_flags + long_flags)
       options[flags] = option.get('desc')
-    options = dict_to_table(options)
+    options = _dict_to_table(options)
     sections.append(('Options', options))
     # Assembling sections
     sections = [
