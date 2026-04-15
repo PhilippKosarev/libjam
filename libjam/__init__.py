@@ -5,10 +5,9 @@ PyPi page: https://pypi.org/project/libjam
 """
 
 from .captain import Captain
-from . import (
-  drawer,
-  writer,
-  notebook,
-  flashcard,
-  cloud,
-)
+from . import notebook
+from . import writer
+from . import flashcard
+from . import drawer
+from .path import Path
+from . import cloud
