@@ -6,12 +6,8 @@ import sys
 from . import writer
 
 
-# Exceptions
-class ParsingError(Exception):
-  pass
-
-
-def get_class_commands(cls) -> dict[str: callable]:
+# Internal functions
+def _get_class_commands(cls) -> dict[str: callable]:
   """Returns a dictionary where a command name points to a function."""
   commands = {}
   for key, value in cls.__dict__.items():
@@ -24,7 +20,7 @@ def get_class_commands(cls) -> dict[str: callable]:
   return commands
 
 
-def get_function_args(
+def _get_function_args(
   function: callable,
 ) -> tuple[list[str], list[str], str|None]:
   """Returns parameters a given function accepts.
@@ -49,11 +45,32 @@ def get_function_args(
   return required_args, optional_args, arbitrary_arg
 
 
+def _classify_args(args: list[str]) -> tuple[list, list, list]:
+  """Categorises arguments.
+
+  Return tuple format: (positional args, long options, short options)
+  """
+  # Vars
+  pos_args = []
+  long_opts = []
+  short_opts = []
+  # Categorising
+  for arg in args:
+    if arg.startswith('--'):
+      long_opts.append(arg.removeprefix('--'))
+    if arg.startswith('-'):
+      short_opts += list(arg.removeprefix('-')) or ['']
+    else:
+      pos_args.append(arg)
+  # Returning
+  return pos_args, long_opts, short_opts
+
+
 def _to_posix_arg(arg: str) -> str:
   return arg.replace('_', ' ').upper()
 
 
-def to_posix_args(
+def _to_posix_args(
   required_args: list,
   optional_args: list = [],
   arbitrary_arg: str = None,
@@ -80,14 +97,12 @@ def _dict_to_table(d: dict[str: str|None]) -> str:
   return writer.to_columns(items, 2, '', '')
 
 
-# Captain is a tool for making CLIs quickly. It works by constructing a CLI
-# based on the specified `ship` which can be either an initialised object or
-# a function. If the `ship` is an initialised object then it's functions
-# will be mapped to the CLI's commands. The function's parameters will be
-# mapped to command-line arguments.
 class Captain:
-  # If the `program` keyword is not specified, then it use the basename of
-  # `sys.argv[0]`.
+  """Creates a CLI around a given function or object.
+
+  If the `program` is not specified, then `sys.argv[0]` will be used to
+  determine the name of the program.
+  """
   def __init__(
     self,
     ship: object or callable,
@@ -97,7 +112,7 @@ class Captain:
     compact_help: bool = None,
   ):
     if type(ship) is type:
-      raise ParsingError(f"Specified ship '{ship.__name__}' is not initialised")
+      raise ValueError(f"Specified ship '{ship.__name__}' is not initialised")
     self.ship = ship
     self.add_help = add_help
     self.compact_help = compact_help
@@ -132,27 +147,6 @@ class Captain:
       'desc': desc,
     }
     self.options.append(option)
-
-  @staticmethod
-  def _classify_args(args: list[str]) -> tuple[list, list, list]:
-    """Categorises arguments.
-
-    Return tuple format: (positional args, long options, short options)
-    """
-    # Vars
-    pos_args = []
-    long_opts = []
-    short_opts = []
-    # Categorising
-    for arg in args:
-      if arg.startswith('--'):
-        long_opts.append(arg.removeprefix('--'))
-      if arg.startswith('-'):
-        short_opts += list(arg.removeprefix('-')) or ['']
-      else:
-        pos_args.append(arg)
-    # Returning
-    return pos_args, long_opts, short_opts
 
   def _parse_options(
     self,
@@ -195,7 +189,7 @@ class Captain:
     `(function: callable, funtion_args: list, options: dict)`.
     """
     # Categorising args
-    args, long_opts, short_opts = self._classify_args(args)
+    args, long_opts, short_opts = _classify_args(args)
     # Parsing options and printing help if needed
     if self.add_help:
       self.add_option('help', ['help', 'h'], 'Prints this page')
@@ -217,7 +211,7 @@ class Captain:
           'no command specified.\n'
           f"Try '{self.program} --help' to view available commands."
         )
-      commands = get_class_commands(type(self.ship))
+      commands = _get_class_commands(type(self.ship))
       command = args.pop(0)
       function = commands.get(command)
       if not function:
@@ -227,14 +221,14 @@ class Captain:
           f'Available commands: {available_commands}'
         )
     # Checking arguments
-    required_args, optional_args, arbitrary_arg = get_function_args(function)
+    required_args, optional_args, arbitrary_arg = _get_function_args(function)
     n_required_args = len(required_args)
     n_optional_args = len(optional_args)
     if not ship_callable:
       if not required_args:
         function_name = function.__name__
         class_name = type(self.ship).__name__
-        raise ParsingError(
+        raise ValueError(
           f"Function '{function_name}' of '{class_name}' is missing "
           "the `self` parameter"
         )
@@ -268,7 +262,7 @@ class Captain:
     if ship_callable:
       # Adding usage
       usage = self.program + ' [OPTION]...'
-      args = to_posix_args(*get_function_args(self.ship))
+      args = _to_posix_args(*_get_function_args(self.ship))
       if args:
         usage += ' ' + args
       sections.append(('Usage', usage))
@@ -281,7 +275,7 @@ class Captain:
       synopsys = self.program + ' [OPTION]... COMMAND [ARGS]...'
       sections.append(('Synopsis', synopsys))
       # Adding commands
-      commands = get_class_commands(type(self.ship))
+      commands = _get_class_commands(type(self.ship))
       commands_table = {}
       for command, function in commands.items():
         commands_table[command] = function.__doc__
@@ -290,11 +284,11 @@ class Captain:
       # Adding usage
       usage = []
       for command, function in commands.items():
-        args = get_function_args(function)
+        args = _get_function_args(function)
         args[0].pop(0) # Removing the `self` argument
         if not any(args):
           continue
-        args = to_posix_args(*args)
+        args = _to_posix_args(*args)
         usage.append(f'{self.program} {command} {args}')
       usage = '\n'.join(usage)
       sections.append(('Usage', usage))
@@ -316,7 +310,7 @@ class Captain:
     print(section_separator.join(sections))
 
   def on_usage_error(self, message: str, command: str = None):
-    """Prints the error message and calls sys.exit with the appropriate exit code."""
+    """Prints the error message and calls `sys.exit` with the appropriate exit code."""
     items = [f'{self.program}:']
     if command:
       items.append(f'{command}:')
@@ -329,7 +323,7 @@ class Captain:
   def on_missing_arguments(self, args: list, command: str = None):
     """Prints the missing arguments and returns the appropriate exit code."""
     n_args = len(args)
-    args = to_posix_args(args)
+    args = _to_posix_args(args)
     message = 'missing argument'
     if n_args != 1:
       message += 's'
