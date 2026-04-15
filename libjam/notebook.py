@@ -13,7 +13,7 @@ import json
 import platformdirs
 
 # Internal imports
-from . import typewriter
+from . import writer
 
 
 # An internal function.
@@ -129,9 +129,9 @@ class Config:
   def on_error(self, e: str or list[str]):
     if isinstance(e, str):
       e = [e]
-    title_style = typewriter.bright_red + typewriter.bold
+    title_style = writer.bright_red + writer.bold
     title = title_style('Configuration error(s):')
-    body = typewriter.to_columns(e, n_columns=1, prefix='  - ')
+    body = writer.to_columns(e, n_columns=1, prefix='  - ')
     print(f'{title}\n{self.file}:\n{body}', file=sys.stderr)
     exit_code = getattr(os, 'EX_CONFIG', None)
     if exit_code is None:

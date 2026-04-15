@@ -7,11 +7,11 @@ except ModuleNotFoundError:
   pass
 
 # Internal imports
-from . import typewriter
+from . import writer
 
 
-def yn_prompt(prompt: str, prompt_style: typewriter.Style or callable = None) -> bool:
-  prompt = '{prompt} [y/n]: '
+def yn_prompt(prompt: str, prompt_style: callable = None) -> bool:
+  prompt = f'{prompt} [y/n]: '
   if prompt_style:
     prompt = prompt_style(prompt)
   while True:
@@ -25,16 +25,16 @@ def yn_prompt(prompt: str, prompt_style: typewriter.Style or callable = None) ->
 def choose(
   prompt: str,
   items: list[str],
-  prompt_style: typewriter.Style or callable = typewriter.bold,
+  prompt_style: callable = writer.bold,
 ) -> str or None:
   # Creating the prompt
   n_items = len(items)
-  prompt = '{prompt} (1-{n_items}, 0 to abort): '
+  prompt = f'{prompt} (1-{n_items}, 0 to abort): '
   if prompt_style:
     prompt_style(prompt)
   # Printing available items
   items = [f'{i}) {item}' for i, item in enumerate(items, start=1)]
-  items = typewriter.to_columns(items)
+  items = writer.to_columns(items)
   print(items + '\n')
   # Getting user input
   while True:

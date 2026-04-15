@@ -3,7 +3,7 @@ import os
 import sys
 
 # Internal imports
-from . import typewriter
+from . import writer
 
 
 # Exceptions
@@ -77,7 +77,7 @@ def _dict_to_table(d: dict[str: str|None]) -> str:
   for key, value in d.items():
     value = ' - ' + value if value else ''
     items += [key, value]
-  return typewriter.to_columns(items, 2, '', '')
+  return writer.to_columns(items, 2, '', '')
 
 
 # Captain is a tool for making CLIs quickly. It works by constructing a CLI
