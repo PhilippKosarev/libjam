@@ -10,7 +10,8 @@ except ModuleNotFoundError:
 from . import writer
 
 
-def yn_prompt(prompt: str, prompt_style: callable = None) -> bool:
+def ask(prompt: str, prompt_style: callable = None) -> bool:
+  """Asks the user a yes/no question."""
   prompt = f'{prompt} [y/n]: '
   if prompt_style:
     prompt = prompt_style(prompt)
@@ -22,11 +23,12 @@ def yn_prompt(prompt: str, prompt_style: callable = None) -> bool:
       return False
 
 
-def choose(
+def select(
   prompt: str,
   items: list[str],
   prompt_style: callable = writer.bold,
 ) -> str or None:
+  """Asks the user to select one item from a list."""
   # Creating the prompt
   n_items = len(items)
   prompt = f'{prompt} (1-{n_items}, 0 to abort): '
