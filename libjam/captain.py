@@ -58,7 +58,7 @@ def _classify_args(args: list[str]) -> tuple[list, list, list]:
   for arg in args:
     if arg.startswith('--'):
       long_opts.append(arg.removeprefix('--'))
-    if arg.startswith('-'):
+    elif arg.startswith('-'):
       short_opts += list(arg.removeprefix('-')) or ['']
     else:
       pos_args.append(arg)
