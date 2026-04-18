@@ -26,12 +26,11 @@ license = "GPL-2.0"
 license-files = ["LICEN[CS]E*"]
 
 dependencies = [
-  "filetype >= 1.0.0",
-  "Send2Trash >= 1.8.0",
-  "rarfile >= 4.0",
-  "py7zr >= 1.0.0",
-  "platformdirs >= 4.0.0",
   "toml >= 0.10.0",
+  "platformdirs >= 4.0.0",
+  "filetype >= 1.0.0",
+  "py7zr >= 1.0.0",
+  "rarfile >= 4.0",
   "requests >= 2.0.0",
 ]
 
