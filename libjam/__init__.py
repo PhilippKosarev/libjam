@@ -5,7 +5,7 @@ PyPi page: https://pypi.org/project/libjam
 """
 
 from .captain import Captain
-from . import notebook
+from .secretary import Secretary
 from . import writer
 from . import flashcard
 from . import drawer
