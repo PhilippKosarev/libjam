@@ -51,6 +51,6 @@ class Path(pathlib.Path):
   unpack_rar = drawer.unpack_rar
   unpack_rar_with_progress = drawer.unpack_rar_with_progress
 
-  can_be_unpacked = drawer.can_be_unpacked
+  can_unpack = drawer.can_unpack
   unpack = drawer.unpack
   unpack_with_progress = drawer.unpack

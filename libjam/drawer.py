@@ -330,7 +330,7 @@ _unpack_with_progress_functions = {
 }
 
 
-def can_be_unpacked(archive) -> bool:
+def can_unpack(archive) -> bool:
   """Checks if the given archive can be unpacked."""
   ext = filetype.guess_extension(archive)
   function = _unpack_functions.get(ext)
