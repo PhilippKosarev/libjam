@@ -53,4 +53,4 @@ class Path(pathlib.Path):
 
   can_unpack = drawer.can_unpack
   unpack = drawer.unpack
-  unpack_with_progress = drawer.unpack
+  unpack_with_progress = drawer.unpack_with_progress
