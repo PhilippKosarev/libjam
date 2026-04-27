@@ -2,6 +2,7 @@
 
 # Imports
 import os
+import sys
 
 # Constants
 ESC = '\x1B['
@@ -58,6 +59,12 @@ clear_history = ClearSequence('J', 3)
 clear_line_after_cursor = ClearSequence('K', 0)
 clear_line_before_cursor = ClearSequence('K', 1)
 clear_line = ClearSequence('K', 2)
+
+
+def clear_lines(n_lines: int, file=None, flush=False):
+  """Clears the given number of lines in the terminal."""
+  buff = up.join([clear_line] * n_lines)
+  print(buff, end='', file=file, flush=flush)
 
 
 # Style sequences (SGR)
@@ -141,50 +148,9 @@ def on_rgb(r: int, g: int, b: int) -> Style:
   return Style(f'48;2;{r};{g};{b}', 49)
 
 
-# Clears a given number of lines in the terminal.
-def clear_lines(n_lines: int, file=None, flush=False):
-  buff = [clear_line for _ in range(n_lines)]
-  buff = up.join(buff)
-  print(buff, end='', file=file, flush=flush)
-
-
-# Prints on the same line.
-def print_status(status: str, file=None, flush=False):
-  print(f'{clear_line} {status}\r', end='', file=file, flush=flush)
-
-
-# Clears the current line and prints the progress bar on the same line.
-def print_progress(
-  status: str,
-  done: int,
-  todo: int,
-  max_bar_width: int = 50,
-  symbols: str = '[=]',
-):
-  # Getting maximum bar width
-  min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
-  end_padding = 5
-  bar_width = os.get_terminal_size()[0] - min_width - end_padding
-  if bar_width > max_bar_width:
-    bar_width = max_bar_width
-  # Calculating stuffs
-  progress_float = done / todo
-  if progress_float > 1:
-    progress_float = 1
-  percentage = str(int(progress_float * 100))
-  percentage = percentage + '%' + (' ' * (3 - len(percentage)))
-  # Outputting
-  result = f' {percentage}'
-  if bar_width > 5:
-    bar = symbols[1] * int(progress_float * bar_width)
-    bar += ' ' * (bar_width - len(bar))
-    bar = symbols[0] + bar + symbols[2]
-    result += f' {bar}'
-  result += f' {status}:'
-  todo, done = str(todo), str(done)
-  done = done + (' ' * (len(todo) - len(done)))
-  result += f' {done}/{todo}'
-  print_status(result)
+def indent(string: str, prefix: str = '  ') -> str:
+  """Indents the given string using the given prefix."""
+  return prefix + string.replace('\n', '\n' + prefix)
 
 
 def to_columns(
@@ -193,7 +159,7 @@ def to_columns(
   column_sep: str = '  ',
   prefix: str = '  ',
 ) -> str:
-  """Arranges given items in columns.
+  """Arranges a list of strings in columns.
 
   If `n_columns` is not set, it will be calculated based on the size
   of the terminal.
@@ -234,3 +200,47 @@ def to_columns(
     line = ''.join(line)
     lines.append(line)
   return '\n'.join(lines)
+
+
+def eprint(*args, sep=' ', end='\n', flush=False):
+  """Prints to stderr."""
+  print(*args, sep=sep, end=end, flush=flush, file=sys.stderr)
+
+
+def print_status(status: str, flush=False):
+  """Prints on the same line."""
+  eprint(f'{clear_line} {status}\r', end='', flush=flush)
+
+
+def print_progress(
+  status: str,
+  done: int,
+  todo: int,
+  max_bar_width: int = 50,
+  symbols: str = '[=]',
+):
+  """Clears the current line and prints the progress bar on the same line."""
+  # Getting maximum bar width
+  min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
+  end_padding = 5
+  bar_width = os.get_terminal_size()[0] - min_width - end_padding
+  if bar_width > max_bar_width:
+    bar_width = max_bar_width
+  # Calculating stuffs
+  progress_float = done / todo
+  if progress_float > 1:
+    progress_float = 1
+  percentage = str(int(progress_float * 100))
+  percentage = percentage + '%' + (' ' * (3 - len(percentage)))
+  # Outputting
+  result = f' {percentage}'
+  if bar_width > 5:
+    bar = symbols[1] * int(progress_float * bar_width)
+    bar += ' ' * (bar_width - len(bar))
+    bar = symbols[0] + bar + symbols[2]
+    result += f' {bar}'
+  result += f' {status}:'
+  todo, done = str(todo), str(done)
+  done = done + (' ' * (len(todo) - len(done)))
+  result += f' {done}/{todo}'
+  print_status(result)
