@@ -3,6 +3,7 @@
 # Imports
 import os
 import sys
+import contextlib
 import collections
 
 # Constants
@@ -137,6 +138,15 @@ def rgb(r: int, g: int, b: int) -> Style:
 def on_rgb(r: int, g: int, b: int) -> Style:
   """Creates a background colour `Style` for given rgb values."""
   return Style(f'48;2;{r};{g};{b}', 49)
+
+
+@contextlib.contextmanager
+def hidden_cursor(file=None, flush=False):
+  """A context manager that hides the cursor when entered."""
+  try:
+    yield print(CSI + '?25l', end='', file=file, flush=flush)
+  finally:
+    print(CSI + '?25l', end='', file=file, flush=flush)
 
 
 def indent(string: str, prefix: str = '  ') -> str:
