@@ -8,19 +8,6 @@ import sys
 ESC = '\x1B['
 
 
-# General control codes (C0)
-class ControlCode(str):
-  """A string that prints itself when called."""
-  def __call__(self, file=None, flush=False):
-    print(self, end='', file=file, flush=flush)
-
-
-bell = ControlCode('\a')
-back = ControlCode('\b')
-home = ControlCode('\r')
-tab = ControlCode('\t')
-
-
 # Navigation sequences (CSI commands)
 class NavigationSequence(str):
   def __new__(cls, char: str):
@@ -43,7 +30,7 @@ view_down = NavigationSequence('T')
 
 
 # Clear sequences (CSI commands)
-class ClearSequence(ControlCode):
+class ClearSequence(str):
   """A string that clears some part of the screen."""
   def __new__(cls, char: str, n: int):
     return str.__new__(cls, f'{ESC}{n}{char}')
