@@ -3,6 +3,7 @@
 # Imports
 import os
 import sys
+import collections
 
 # Constants
 ESC = chr(0x1B)
@@ -10,11 +11,12 @@ CSI = ESC + '['
 
 
 # Navigation sequences
-class NavigationSequence(str):
-  def __new__(cls, char: str):
-    new = str.__new__(cls, f'{CSI}1{char}')
-    new._char = char
-    return new
+class NavigationSequence(collections.UserString):
+  """A string that moves the cursor."""
+
+  def __init__(self, char: str):
+    self.data = f'{CSI}1{char}'
+    self._char = char
 
   def __call__(self, n: int = 1, file=None, flush=False) -> str:
     print(f'{CSI}{n}{self._char}', end='', file=file, flush=flush)
@@ -31,10 +33,11 @@ view_down = NavigationSequence('T')
 
 
 # Clear sequences
-class ClearSequence(str):
+class ClearSequence(collections.UserString):
   """A string that clears some part of the screen."""
-  def __new__(cls, char: str, n: int):
-    return str.__new__(cls, f'{CSI}{n}{char}')
+
+  def __init__(self, char: str, n: int):
+    self.data = f'{CSI}{n}{char}'
 
   def __call__(self, file=None, flush=False):
     print(self, end='', file=file, flush=flush)
@@ -50,30 +53,30 @@ clear_line = ClearSequence('K', 2)
 
 
 def clear_lines(n_lines: int, file=None, flush=False):
-  """Clears the given number of lines in the terminal."""
+  """Clears the given number of lines."""
   buff = up.join([clear_line] * n_lines)
   print(buff, end='', file=file, flush=flush)
 
 
-# Style sequences (SGR)
-class Style(str):
-  def __new__(cls, start, end = ''):
-    start = f'{CSI}{start}m'
-    if end:
-      end = f'{CSI}{end}m'
-    new = str.__new__(cls, start)
-    new._end = end
-    return new
+# SGR sequences
+class Style(collections.UserString):
+  """A string that changes the style of the text (SGR sequence)."""
 
-  def __add__(self, seq: Style) -> Style:
-    start = f"{self}{seq}"
-    end = f"{self._end}{seq}"
-    new = str.__new__(Style, start)
-    new._end = end
-    return new
+  def __init__(self, start, end):
+    self.data = f'{CSI}{start}m'
+    self._end = f'{CSI}{end}m'
+
+  def __add__(self, other):
+    cls = type(self)
+    if isinstance(other, cls):
+      new = cls.__new__(cls)
+      new.data = f'{self.data}{other.data}'
+      new._end = f'{self._end}{other._end}'
+      return new
+    return self.data + other
 
   def __call__(self, s) -> str:
-    return f'{self}{s}{self._end}'
+    return self.data + str(s) + self._end
 
 
 # Typographic styles
@@ -127,12 +130,12 @@ on_bright_white = Style(107, 49)
 
 
 def rgb(r: int, g: int, b: int) -> Style:
-  """Creates a colour Style for given rgb values."""
+  """Creates a colour `Style` for given rgb values."""
   return Style(f'38;2;{r};{g};{b}', 39)
 
 
 def on_rgb(r: int, g: int, b: int) -> Style:
-  """Creates a background colour Style for given rgb values."""
+  """Creates a background colour `Style` for given rgb values."""
   return Style(f'48;2;{r};{g};{b}', 49)
 
 
