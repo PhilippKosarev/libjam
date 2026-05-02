@@ -5,18 +5,19 @@ import os
 import sys
 
 # Constants
-ESC = '\x1B['
+ESC = chr(0x1B)
+CSI = ESC + '['
 
 
-# Navigation sequences (CSI commands)
+# Navigation sequences
 class NavigationSequence(str):
   def __new__(cls, char: str):
-    new = str.__new__(cls, f'{ESC}1{char}')
+    new = str.__new__(cls, f'{CSI}1{char}')
     new._char = char
     return new
 
   def __call__(self, n: int = 1, file=None, flush=False) -> str:
-    print(f'{ESC}{n}{self._char}', end='', file=file, flush=flush)
+    print(f'{CSI}{n}{self._char}', end='', file=file, flush=flush)
 
 
 up = NavigationSequence('A')
@@ -29,11 +30,11 @@ view_up = NavigationSequence('S')
 view_down = NavigationSequence('T')
 
 
-# Clear sequences (CSI commands)
+# Clear sequences
 class ClearSequence(str):
   """A string that clears some part of the screen."""
   def __new__(cls, char: str, n: int):
-    return str.__new__(cls, f'{ESC}{n}{char}')
+    return str.__new__(cls, f'{CSI}{n}{char}')
 
   def __call__(self, file=None, flush=False):
     print(self, end='', file=file, flush=flush)
@@ -57,9 +58,9 @@ def clear_lines(n_lines: int, file=None, flush=False):
 # Style sequences (SGR)
 class Style(str):
   def __new__(cls, start, end = ''):
-    start = f'{ESC}{start}m'
+    start = f'{CSI}{start}m'
     if end:
-      end = f'{ESC}{end}m'
+      end = f'{CSI}{end}m'
     new = str.__new__(cls, start)
     new._end = end
     return new
