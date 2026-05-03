@@ -11,16 +11,79 @@ ESC = chr(0x1B)
 CSI = ESC + '['
 
 
+# CSI strings
+class CSICommand(collections.UserString):
+  """A CSI command string that prints itself when called."""
+
+  def __init__(self, s: str):
+    self.data = f'{CSI}{s}'
+
+  def __call__(self, file=None, flush=False):
+    print(self.data, file=file, flush=flush, end='')
+
+
+hide_cursor = CSICommand('?25l')
+show_cursor = CSICommand('?25h')
+
+
+@contextlib.contextmanager
+def hidden_cursor(file=None, flush=False):
+  """A context manager that hides the cursor when entered."""
+  try:
+    hide_cursor(file, flush)
+    yield
+  finally:
+    show_cursor(file, flush)
+
+
+try:
+  import termios
+
+  def hide_input():
+    """Hides what the user is typing."""
+    stdin_fileno = sys.stdin.fileno()
+    attributes = termios.tcgetattr(stdin_fileno)
+    attributes[3] &= ~termios.ECHO
+    attributes[3] &= ~termios.ICANON
+    termios.tcsetattr(stdin_fileno, termios.TCSANOW, attributes)
+
+  def show_input():
+    """Reveals what the user is typing."""
+    stdin_fileno = sys.stdin.fileno()
+    attributes = termios.tcgetattr(stdin_fileno)
+    attributes[3] |= termios.ECHO
+    attributes[3] |= termios.ICANON
+    termios.tcsetattr(stdin_fileno, termios.TCSANOW, attributes)
+
+except ModuleNotFoundError:
+  def hide_input():
+    """Does nothing because `termios` is not installed."""
+    pass
+
+  def show_input():
+    """Does nothing because `termios` is not installed."""
+    pass
+
+
+@contextlib.contextmanager
+def hidden_input():
+  try:
+    hide_input()
+    yield
+  finally:
+    show_input()
+
+
 # Navigation sequences
-class NavigationSequence(collections.UserString):
+class NavigationSequence(CSICommand):
   """A string that moves the cursor."""
 
   def __init__(self, char: str):
-    self.data = f'{CSI}1{char}'
+    super().__init__(f'1{char}')
     self._char = char
 
   def __call__(self, n: int = 1, file=None, flush=False) -> str:
-    print(f'{CSI}{n}{self._char}', end='', file=file, flush=flush)
+    print(f'{CSI}{n}{self._char}', file=file, flush=flush, end='')
 
 
 up = NavigationSequence('A')
@@ -34,14 +97,11 @@ view_down = NavigationSequence('T')
 
 
 # Clear sequences
-class ClearSequence(collections.UserString):
+class ClearSequence(CSICommand):
   """A string that clears some part of the screen."""
 
   def __init__(self, char: str, n: int):
-    self.data = f'{CSI}{n}{char}'
-
-  def __call__(self, file=None, flush=False):
-    print(self, end='', file=file, flush=flush)
+    super().__init__(f'{n}{char}')
 
 
 clear_page_after_cursor = ClearSequence('J', 0)
@@ -138,15 +198,6 @@ def rgb(r: int, g: int, b: int) -> Style:
 def on_rgb(r: int, g: int, b: int) -> Style:
   """Creates a background colour `Style` for given rgb values."""
   return Style(f'48;2;{r};{g};{b}', 49)
-
-
-@contextlib.contextmanager
-def hidden_cursor(file=None, flush=False):
-  """A context manager that hides the cursor when entered."""
-  try:
-    yield print(CSI + '?25l', end='', file=file, flush=flush)
-  finally:
-    print(CSI + '?25l', end='', file=file, flush=flush)
 
 
 def indent(string: str, prefix: str = '  ') -> str:
