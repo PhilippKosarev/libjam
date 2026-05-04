@@ -13,7 +13,14 @@ CSI = ESC + '['
 
 # CSI strings
 class CSICommand(collections.UserString):
-  """A CSI command string that prints itself when called."""
+  """A Control Sequence Introducer command string.
+
+  Can be called to print itself, therefore activating the CSI.
+  The function signature for calling looks like this:
+  ```
+   __call__(self, file=None, flush=False)
+  ```
+  """
 
   def __init__(self, s: str):
     self.data = f'{CSI}{s}'
@@ -32,12 +39,14 @@ class CSICommand(collections.UserString):
 
 
 hide_cursor = CSICommand('?25l')
+"""Hides the cursor."""
 show_cursor = CSICommand('?25h')
+"""Reveals the cursor."""
 
 
 @contextlib.contextmanager
 def hidden_cursor(file=None, flush=False):
-  """A context manager that hides the cursor when entered."""
+  """A context manager that hides the cursor."""
   try:
     hide_cursor(file, flush)
     yield
@@ -76,6 +85,7 @@ except ModuleNotFoundError:
 
 @contextlib.contextmanager
 def hidden_input():
+  """A context manager that hides user input."""
   try:
     hide_input()
     yield
@@ -85,41 +95,63 @@ def hidden_input():
 
 # Navigation sequences
 class NavigationSequence(CSICommand):
-  """A string that moves the cursor."""
+  """A CSI command that moves the cursor.
+
+  The function signature for calling looks like this:
+  ```
+  __call__(self, n: int = 1, file=None, flush=False)
+  ```
+  Here `n` decides how many times the cursor should be moved.
+  """
 
   def __init__(self, char: str):
     super().__init__(f'1{char}')
     self._char = char
 
-  def __call__(self, n: int = 1, file=None, flush=False) -> str:
+  def __call__(self, n: int = 1, file=None, flush=False):
     print(f'{CSI}{n}{self._char}', file=file, flush=flush, end='')
 
 
 up = NavigationSequence('A')
+"""Moves the cursor up."""
 down = NavigationSequence('B')
+"""Moves the cursor down."""
 right = NavigationSequence('C')
+"""Moves the cursor right."""
 left = NavigationSequence('D')
+"""Moves the cursor left."""
 next_line = NavigationSequence('E')
+"""Moves the cursor to the next line."""
 prev_line = NavigationSequence('F')
+"""Moves the cursor to the previous line."""
 view_up = NavigationSequence('S')
+"""Scrolls the view up."""
 view_down = NavigationSequence('T')
+"""Scrolls the view down."""
 
 
 # Clear sequences
 class ClearSequence(CSICommand):
-  """A string that clears some part of the screen."""
+  """A CSI command that clears some part of the screen."""
 
   def __init__(self, char: str, n: int):
     super().__init__(f'{n}{char}')
 
 
-clear_page_after_cursor = ClearSequence('J', 0)
-clear_page_before_cursor = ClearSequence('J', 1)
-clear_page = ClearSequence('J', 2)
-clear_history = ClearSequence('J', 3)
-clear_line_after_cursor = ClearSequence('K', 0)
-clear_line_before_cursor = ClearSequence('K', 1)
 clear_line = ClearSequence('K', 2)
+"""Clears the whole line."""
+clear_line_from_cursor = ClearSequence('K', 0)
+"""Clears the line starting from the cursor."""
+clear_line_before_cursor = ClearSequence('K', 1)
+"""Clears the line up to the cursor."""
+clear_page = ClearSequence('J', 2)
+"""Clears the whole page."""
+clear_page_from_cursor = ClearSequence('J', 0)
+"""Clears the page starting from the cursor."""
+clear_page_before_cursor = ClearSequence('J', 1)
+"""Clears the page up to the cursor."""
+clear_history = ClearSequence('J', 3)
+"""Clears the scrollback buffer."""
 
 
 def clear_lines(n_lines: int, file=None, flush=False):
@@ -130,7 +162,20 @@ def clear_lines(n_lines: int, file=None, flush=False):
 
 # SGR sequences
 class Style(collections.UserString):
-  """A string that changes the style of the text (SGR sequence)."""
+  """A CSI commands that selects the grahpic rendition (SGR).
+
+  Example usage:
+  ```
+  bold = Style(1, 22)
+  print(bold('This text is bold!'))
+
+  underline = Style(4, 24)
+  print(underline('This text is underlined!'))
+
+  bold_and_underlined = bold + underline
+  print(bold_and_underlined('This text is bold and underlined!'))
+  ```
+  """
 
   def __init__(self, start, end):
     self.data = f'{CSI}{start}m'
@@ -151,52 +196,99 @@ class Style(collections.UserString):
 
 # Typographic styles
 reset = Style(0, 0)
+"""Resets any previously applied styles."""
 bold = Style(1, 22)
+"""Bolden the text."""
 dim = Style(2, 22)
+"""Dims the text."""
 italic = Style(3, 23)
+"""Italicises the text."""
 underline = Style(4, 24)
+"""Underlines the text."""
 blink = Style(5, 25)
+"""Makes the text look like its flashing."""
 invert = Style(7, 27)
+"""Swaps the foreground and background colours."""
 hide = Style(8, 28)
+"""Makes the text invisible."""
 strike = Style(9, 29)
+"""Adds a strikethrough to the text."""
+
 # Regular colours
 default = Style(39, 39)
+"""Sets the text colour to default."""
 black = Style(30, 39)
+"""Sets the text colour to black."""
 red = Style(31, 39)
+"""Sets the text colour to red."""
 green = Style(32, 39)
+"""Sets the text colour to green."""
 yellow = Style(33, 39)
+"""Sets the text colour to yellow."""
 blue = Style(34, 39)
+"""Sets the text colour to blue."""
 purple = Style(35, 39)
+"""Sets the text colour to purple."""
 cyan = Style(36, 39)
+"""Sets the text colour to cyan."""
 white = Style(37, 39)
+"""Sets the text colour to white."""
+
 # Regular background colours
 on_default = Style(49, 49)
+"""Sets the background colour to default."""
 on_black = Style(40, 49)
+"""Sets the background colour to black."""
 on_red = Style(41, 49)
+"""Sets the background colour to red."""
 on_green = Style(42, 49)
+"""Sets the background colour to green."""
 on_yellow = Style(43, 49)
+"""Sets the background colour to yellow."""
 on_blue = Style(44, 49)
+"""Sets the background colour to blue."""
 on_purple = Style(45, 49)
+"""Sets the background colour to purple."""
 on_cyan = Style(46, 49)
+"""Sets the background colour to cyan."""
 on_white = Style(47, 49)
+"""Sets the background colour to white."""
+
 # Bright colours
 bright_black = Style(90, 39)
+"""Sets the text colour to grey."""
 bright_red = Style(91, 39)
+"""Sets the text colour to bright red."""
 bright_green = Style(92, 39)
+"""Sets the text colour to bright green."""
 bright_yellow = Style(93, 39)
+"""Sets the text colour to bright yellow."""
 bright_blue = Style(94, 39)
+"""Sets the text colour to bright blue."""
 bright_purple = Style(95, 39)
+"""Sets the text colour to bright purple."""
 bright_cyan = Style(96, 39)
+"""Sets the text colour to bright cyan."""
 bright_white = Style(97, 39)
+"""Sets the text colour to a lighter shade of white."""
+
 # Bright background colours
 on_bright_black = Style(100, 49)
+"""Sets the background colour to grey."""
 on_bright_red = Style(101, 49)
+"""Sets the background colour to bright red."""
 on_bright_green = Style(102, 49)
+"""Sets the background colour to bright green."""
 on_bright_yellow = Style(103, 49)
+"""Sets the background colour to bright yellow."""
 on_bright_blue = Style(104, 49)
+"""Sets the background colour to bright blue."""
 on_bright_purple = Style(105, 49)
+"""Sets the background colour to bright purple."""
 on_bright_cyan = Style(106, 49)
+"""Sets the background colour to bright cyan."""
 on_bright_white = Style(107, 49)
+"""Sets the background colour to a lighter shade of white."""
 
 
 def rgb(r: int, g: int, b: int) -> Style:
@@ -282,6 +374,7 @@ class StatusBar:
     configure_foo()
   ```
   """
+
   def __init__(self, status: str):
     self.status = status
     self._printed = ''
@@ -289,7 +382,7 @@ class StatusBar:
   def _build(self):
     term_width = os.get_terminal_size()[0]
     self._printed = self.status[:term_width]
-    return clear_page_after_cursor + self._printed
+    return clear_page_from_cursor + self._printed
 
   def _print(self, text: str):
     eprint(text, end='\r', flush=True)
@@ -306,7 +399,7 @@ class StatusBar:
     return self
 
   def __exit__(self, *exc):
-    self._print(clear_page_after_cursor + show_cursor)
+    self._print(clear_page_from_cursor + show_cursor)
     show_input()
 
 
@@ -326,6 +419,7 @@ class ProgressBar:
       bar.update(i)
   ```
   """
+
   def __init__(
     self,
     status: str,
