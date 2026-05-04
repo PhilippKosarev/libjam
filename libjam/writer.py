@@ -21,6 +21,15 @@ class CSICommand(collections.UserString):
   def __call__(self, file=None, flush=False):
     print(self.data, file=file, flush=flush, end='')
 
+  def __add__(self, other):
+    cls = type(self)
+    if isinstance(other, cls):
+      new = cls.__new__(cls)
+      new.data = self.data + other.data
+      return new
+    else:
+      return self.data + other
+
 
 hide_cursor = CSICommand('?25l')
 show_cursor = CSICommand('?25h')
@@ -259,40 +268,123 @@ def eprint(*args, sep=' ', end='\n', flush=False):
   print(*args, sep=sep, end=end, flush=flush, file=sys.stderr)
 
 
-def print_status(status: str, flush=False):
-  """Prints on the same line."""
-  eprint(f'{clear_line} {status}\r', end='', flush=flush)
+class StatusBar:
+  """A context manager that prints the `status` to stderr on on entry
+  and clears it on exit.
+
+  If the `status` message is bigger than the user's terminal, then only
+  a part of it will be printed, so that it fits cleanly onto one line
+  in the user's terminal, maintaining the appearance of a bar.
+
+  Example usage:
+  ```
+  with StatusBar('Configuring Foo...'):
+    configure_foo()
+  ```
+  """
+  def __init__(self, status: str):
+    self.status = status
+    self._printed = ''
+
+  def _build(self):
+    term_width = os.get_terminal_size()[0]
+    self._printed = self.status[:term_width]
+    return clear_page_after_cursor + self._printed
+
+  def _print(self, text: str):
+    eprint(text, end='\r', flush=True)
+
+  def update(self, status: str = None):
+    """Updates the status bar."""
+    if status is not None:
+      self.status = status
+    self._print(self._build())
+
+  def __enter__(self):
+    hide_input()
+    self._print(self._build() + hide_cursor)
+    return self
+
+  def __exit__(self, *exc):
+    self._print(clear_page_after_cursor + show_cursor)
+    show_input()
 
 
-def print_progress(
-  status: str,
-  done: int,
-  todo: int,
-  max_bar_width: int = 50,
-  symbols: str = '[=]',
-):
-  """Clears the current line and prints the progress bar on the same line."""
-  # Getting maximum bar width
-  min_width = len(f' 000% {symbols[0]}{symbols[2]} {status}: {todo}/{todo}')
-  end_padding = 5
-  bar_width = os.get_terminal_size()[0] - min_width - end_padding
-  if bar_width > max_bar_width:
-    bar_width = max_bar_width
-  # Calculating stuffs
-  progress_float = done / todo
-  if progress_float > 1:
-    progress_float = 1
-  percentage = str(int(progress_float * 100))
-  percentage = percentage + '%' + (' ' * (3 - len(percentage)))
-  # Outputting
-  result = f' {percentage}'
-  if bar_width > 5:
-    bar = symbols[1] * int(progress_float * bar_width)
-    bar += ' ' * (bar_width - len(bar))
-    bar = symbols[0] + bar + symbols[2]
-    result += f' {bar}'
-  result += f' {status}:'
-  todo, done = str(todo), str(done)
-  done = done + (' ' * (len(todo) - len(done)))
-  result += f' {done}/{todo}'
-  print_status(result)
+class ProgressBar:
+  """A context manager that prints a progress bar to stderr on entry
+  and clears it on exit.
+
+  If the `status` message is bigger than the user's terminal, then only
+  a part of it will be printed, so that it fits cleanly onto one line
+  in the user's terminal, maintaining the appearance of a bar.
+
+  Example usage:
+  ```
+  with ProgressBar('Fooing 3 Bars', 0, 3) as bar:
+    for i in range(1, 4):
+      foo(bar)
+      bar.update(i)
+  ```
+  """
+  def __init__(
+    self,
+    status: str,
+    done: int = 0,
+    todo: int = 0,
+    symbols: str = '[= ]',
+  ):
+    self.status = status
+    self.symbols = symbols
+    self._done = done
+    self._todo = todo
+    self._bar = StatusBar(self._build())
+
+  def _build(self) -> str:
+    # Calculating the progress float
+    try:
+      progress_float = self._done / self._todo
+      progress_float = min(max(progress_float, 0), 1)
+    except ZeroDivisionError:
+      progress_float = 0
+    available_width = os.get_terminal_size()[0]
+    items = []
+    # Printing the status
+    items.append(self.status)
+    available_width -= len(self.status)
+    # Adding the percentage
+    if available_width >= 5:
+      percentage = str(int(progress_float * 100))
+      items.append(f' {percentage:>3}%')
+      available_width -= 5
+    # Adding the progress bar
+    if available_width >= 8:
+      bar_width = min(available_width - 3, 30)
+      filled = int(progress_float * bar_width)
+      empty = bar_width - filled
+      bar = (
+        ' '
+        + self.symbols[0]
+        + self.symbols[1] * filled
+        + self.symbols[2] * empty
+        + self.symbols[3]
+      )
+      items.append(bar)
+      available_width -= bar_width + 3
+    # Final formatting
+    items[0] += ' ' * available_width
+    return ''.join(items)
+
+  def update(self, done: int = None, todo: int = None):
+    """Updates the progress bar."""
+    if done is not None:
+      self._done = done
+    if todo is not None:
+      self._todo = todo
+    self._bar.update(self._build())
+
+  def __enter__(self):
+    self._bar.__enter__()
+    return self
+
+  def __exit__(self, *exc):
+    self._bar.__exit__(*exc)
