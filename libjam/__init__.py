@@ -10,4 +10,3 @@ from . import writer
 from . import flashcard
 from . import drawer
 from .path import Path
-from . import cloud
