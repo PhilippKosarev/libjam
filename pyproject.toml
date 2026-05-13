@@ -14,12 +14,10 @@ classifiers = [
 
 requires-python = ">= 3.14"
 dependencies = [
-  "toml >= 0.10.0",
   "platformdirs >= 4.0.0",
   "filetype >= 1.0.0",
   "py7zr >= 1.0.0",
   "rarfile >= 4.0",
-  "requests >= 2.0.0",
 ]
 
 [[project.authors]]
@@ -32,12 +30,12 @@ Issues = "https://github.com/philippkosarev/libjam/issues"
 
 [dependency-groups]
 docs = [
-  "sphinx (>=9.1.0,<10.0.0)",
-  "sphinx-toolbox (>=4.1.2,<5.0.0)",
-  "pydata-sphinx-theme (>=0.17.1,<0.18.0)",
-  "sphinx-copybutton (>=0.5.2,<0.6.0)",
-  "pypandoc (>=1.17,<2.0)",
-  "pypandoc-binary (>=1.17,<2.0)",
+  "sphinx",
+  "sphinx-toolbox",
+  "pydata-sphinx-theme",
+  "sphinx-copybutton",
+  "pypandoc",
+  "pypandoc-binary",
 ]
 
 [build-system]

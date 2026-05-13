@@ -2,7 +2,7 @@
 from copy import deepcopy
 import os
 import sys
-import toml
+import tomllib
 import collections
 import platformdirs
 
@@ -43,7 +43,7 @@ class File(collections.UserDict):
         data = self._load()
       except OSError as e:
         self.on_error(e.args[1] + '.')
-      except toml.TomlDecodeError as e:
+      except tomllib.TOMLDecodeError as e:
         self.on_error(str(e) + '.')
     else:
       data = self._load()
@@ -55,7 +55,8 @@ class File(collections.UserDict):
         with open(self.file, 'w') as fp:
           fp.write(self.template)
     if os.path.isfile(self.file):
-      return toml.load(self.file)
+      with open(self.file) as fp:
+        return tomllib.load(fp)
     else:
       return {}
 
