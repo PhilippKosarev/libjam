@@ -30,8 +30,8 @@ Issues = "https://github.com/philippkosarev/libjam/issues"
 
 [dependency-groups]
 docs = [
-  "sphinx",
-  "sphinx-toolbox",
+  "sphinx >= 8.2, < 9",
+  "sphinx-toolbox >= 4.1.2, < 5",
   "pydata-sphinx-theme",
   "sphinx-copybutton",
   "pypandoc",
