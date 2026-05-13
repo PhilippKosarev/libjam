@@ -1,0 +1,4 @@
+drawer
+======
+
+.. automodule:: libjam.drawer

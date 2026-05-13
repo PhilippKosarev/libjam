@@ -1,0 +1,4 @@
+flashcard
+=========
+
+.. automodule:: libjam.flashcard

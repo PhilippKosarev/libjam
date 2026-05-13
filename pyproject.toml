@@ -1,30 +1,18 @@
-[build-system]
-build-backend = "hatchling.build"
-requires = [
-  "hatchling",
-]
-
-[tool.hatch.build.targets.wheel]
-include = [
-  "libjam",
-]
-
 [project]
 name = "libjam"
-version = "0.1.9"
-authors = [
-  {name = "Philipp Kosarev", email = "philipp.kosarev@gmail.com"},
-]
 description = "A library jam for Python."
+version = "0.1.9"
+
 readme = "README.md"
-requires-python = ">= 3.14.0"
+license = "GPL-2.0"
+license-files = ["LICEN[CS]E*"]
+
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
 ]
-license = "GPL-2.0"
-license-files = ["LICEN[CS]E*"]
 
+requires-python = ">= 3.14"
 dependencies = [
   "toml >= 0.10.0",
   "platformdirs >= 4.0.0",
@@ -34,6 +22,27 @@ dependencies = [
   "requests >= 2.0.0",
 ]
 
+[[project.authors]]
+name = "Philipp Kosarev"
+email = "philipp.kosarev@gmail.com"
+
 [project.urls]
 Homepage = "https://github.com/philippkosarev/libjam"
 Issues = "https://github.com/philippkosarev/libjam/issues"
+
+[dependency-groups]
+docs = [
+  "sphinx (>=9.1.0,<10.0.0)",
+  "sphinx-toolbox (>=4.1.2,<5.0.0)",
+  "pydata-sphinx-theme (>=0.17.1,<0.18.0)",
+  "sphinx-copybutton (>=0.5.2,<0.6.0)",
+  "pypandoc (>=1.17,<2.0)",
+  "pypandoc-binary (>=1.17,<2.0)",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.build.targets.wheel]
+include = ["libjam"]

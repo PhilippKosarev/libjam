@@ -1,0 +1,4 @@
+Path
+====
+
+.. autoclass:: libjam.Path

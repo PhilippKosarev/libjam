@@ -1,0 +1,4 @@
+Secretary
+=========
+
+.. autoclass:: libjam.Secretary
