@@ -1,7 +1,8 @@
-"""A library jam for Python.
+"""A Python library that makes it easier to create better CLIs and provides some missing pieces for file management.
 
-Source code: https://github.com/philippkosarev/libjam
-PyPi page: https://pypi.org/project/libjam
+Source: https://github.com/philippkosarev/libjam
+Docs: https://libjam.readthedocs.io
+PyPi: https://pypi.org/project/libjam
 """
 
 from .captain import Captain

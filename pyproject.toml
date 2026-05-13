@@ -1,6 +1,6 @@
 [project]
 name = "libjam"
-description = "A library jam for Python."
+description = "A Python library that makes it easier to create better CLIs and provides some missing pieces for file management."
 version = "0.1.9"
 
 readme = "README.md"
@@ -25,8 +25,10 @@ name = "Philipp Kosarev"
 email = "philipp.kosarev@gmail.com"
 
 [project.urls]
-Homepage = "https://github.com/philippkosarev/libjam"
-Issues = "https://github.com/philippkosarev/libjam/issues"
+homepage = "https://github.com/philippkosarev/libjam"
+source = "https://github.com/philippkosarev/libjam"
+issues = "https://github.com/philippkosarev/libjam/issues"
+documentation = "https://libjam.readthedocs.io"
 
 [dependency-groups]
 docs = [
