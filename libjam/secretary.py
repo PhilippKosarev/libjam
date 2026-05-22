@@ -55,7 +55,7 @@ class File(collections.UserDict):
         with open(self.file, 'w') as fp:
           fp.write(self.template)
     if os.path.isfile(self.file):
-      with open(self.file) as fp:
+      with open(self.file, 'rb') as fp:
         return tomllib.load(fp)
     else:
       return {}
