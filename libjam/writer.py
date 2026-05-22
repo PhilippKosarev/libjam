@@ -11,31 +11,74 @@ ESC = chr(0x1B)
 CSI = ESC + '['
 
 
+def eprint(*args, sep=' ', end='\n', flush=False):
+  """Prints to stderr."""
+  print(*args, sep=sep, end=end, flush=flush, file=sys.stderr)
+
+
+def indent(string: str, prefix: str = '  ') -> str:
+  """Indents the given string using the given prefix."""
+  return prefix + string.replace('\n', '\n' + prefix)
+
+
+def to_columns(
+  items: list[str],
+  n_columns: int = 0,
+  column_sep: str = '  ',
+  prefix: str = '  ',
+) -> str:
+  """Arranges a list of strings in columns.
+
+  If `n_columns` is not set, it will be calculated based on the size
+  of the terminal.
+  """
+  items = [str(item) for item in items]
+  items_by_len = sorted(items, key=len, reverse=True)
+  n_items = len(items)
+  # Calculating n_columns
+  if not n_columns:
+    available_width = os.get_terminal_size()[0] - len(prefix)
+    n_columns = 1
+    for i in range(2, n_items + 2):
+      selected_items = items_by_len[:i]
+      text = column_sep.join(selected_items)
+      if len(text) > available_width:
+        n_columns = i - 1
+        break
+    else:
+      n_columns = n_items
+  # Making a list of columns, equalising string length in each column
+  # and adding a separator between columns
+  columns = [items[i::n_columns] for i in range(n_columns)]
+  for i, column in enumerate(columns[:n_columns - 1]):
+    column_width = len(max(column, key=len))
+    for j, item in enumerate(column):
+      columns[i][j] = item + ' ' * (column_width - len(item)) + column_sep
+  # Adding the prefix to the first column
+  for i, item in enumerate(columns[0] if columns else []):
+    columns[0][i] = prefix + item
+  # Combining into a string
+  n_rows = len(columns[0]) if columns else 0
+  lines = []
+  for i in range(n_rows):
+    line = []
+    for column in columns:
+      if i < len(column):
+        line.append(column[i])
+    line = ''.join(line)
+    lines.append(line)
+  return '\n'.join(lines)
+
+
 # CSI strings
 class CSICommand(collections.UserString):
-  """A Control Sequence Introducer command string.
-
-  Can be called to print itself, therefore activating the CSI.
-  The function signature for calling looks like this:
-  ```
-   __call__(self, file=None, flush=False)
-  ```
-  """
+  """A Control Sequence Introducer (CSI) command string."""
 
   def __init__(self, s: str):
     self.data = f'{CSI}{s}'
 
-  def __call__(self, file=None, flush=False):
-    print(self.data, file=file, flush=flush, end='')
-
   def __add__(self, other):
-    cls = type(self)
-    if isinstance(other, cls):
-      new = cls.__new__(cls)
-      new.data = self.data + other.data
-      return new
-    else:
-      return self.data + other
+    return self.data + other
 
 
 hide_cursor = CSICommand('?25l')
@@ -48,10 +91,10 @@ show_cursor = CSICommand('?25h')
 def hidden_cursor(file=None, flush=False):
   """A context manager that hides the cursor."""
   try:
-    hide_cursor(file, flush)
+    print(hide_cursor, file=file, flush=flush)
     yield
   finally:
-    show_cursor(file, flush)
+    print(show_cursor, file=file, flush=flush)
 
 
 try:
@@ -93,37 +136,165 @@ def hidden_input():
     show_input()
 
 
-# Navigation sequences
-class NavigationSequence(CSICommand):
-  """A CSI command that moves the cursor.
+class StatusBar:
+  """A context manager that prints the `status` to stderr on entry and
+  clears it on exit.
 
-  The function signature for calling looks like this:
+  If the `status` message is bigger than the user's terminal, then only
+  a part of it will be printed, so that it fits cleanly onto one line
+  in the user's terminal, maintaining the appearance of a bar.
+
+  Usage example:
   ```
-  __call__(self, n: int = 1, file=None, flush=False)
+  with StatusBar('Configuring Foo...') as status:
+    configure_foo()
+    status.update('Configuring Bar')
+    configure_bar()
   ```
-  Here `n` decides how many times the cursor should be moved.
   """
 
-  def __init__(self, char: str):
-    super().__init__(f'1{char}')
+  def __init__(self, status: str):
+    self.status = status
+    self._printed = ''
+
+  def _build(self):
+    term_width = os.get_terminal_size()[0]
+    self._printed = self.status[:term_width]
+    return clear_page_from_cursor + self._printed
+
+  def _print(self, text: str):
+    eprint(text, end='\r', flush=True)
+
+  def update(self, status: str = None):
+    """Updates the status bar."""
+    if status is not None:
+      self.status = status
+    self._print(self._build())
+
+  def __enter__(self):
+    hide_input()
+    self._print(self._build() + hide_cursor)
+    return self
+
+  def __exit__(self, *exc):
+    eprint(clear_page_from_cursor + show_cursor, end='')
+    show_input()
+
+
+class ProgressBar:
+  """A context manager that prints a progress bar to stderr on entry
+  and clears it on exit.
+
+  If the `status` message is bigger than the user's terminal, then only
+  a part of it will be printed, so that it fits cleanly onto one line
+  in the user's terminal, maintaining the appearance of a bar.
+
+  Example usage:
+  ```
+  with ProgressBar('Fooing 3 Bars', 0, 3) as progress_bar:
+    for i in range(1, 4):
+      foo(bar)
+      progress_bar.update(i)
+  ```
+  """
+
+  def __init__(
+    self,
+    status: str,
+    done: int = 0,
+    todo: int = 0,
+    symbols: str = '[= ]',
+  ):
+    self.status = status
+    self.symbols = symbols
+    self._done = done
+    self._todo = todo
+    self._bar = StatusBar(self._build())
+
+  def _build(self) -> str:
+    # Calculating the progress float
+    try:
+      progress_float = self._done / self._todo
+      progress_float = min(max(progress_float, 0), 1)
+    except ZeroDivisionError:
+      progress_float = 0
+    available_width = os.get_terminal_size()[0]
+    items = []
+    # Printing the status
+    items.append(self.status)
+    available_width -= len(self.status)
+    # Adding the percentage
+    if available_width >= 5:
+      percentage = str(int(progress_float * 100))
+      items.append(f' {percentage:>3}%')
+      available_width -= 5
+    # Adding the progress bar
+    if available_width >= 8:
+      bar_width = min(available_width - 3, 30)
+      filled = int(progress_float * bar_width)
+      empty = bar_width - filled
+      bar = (
+        ' '
+        + self.symbols[0]
+        + self.symbols[1] * filled
+        + self.symbols[2] * empty
+        + self.symbols[3]
+      )
+      items.append(bar)
+      available_width -= bar_width + 3
+    # Final formatting
+    items[0] += ' ' * available_width
+    return ''.join(items)
+
+  def update(self, done: int = None, todo: int = None):
+    """Updates the progress bar."""
+    if done is not None:
+      self._done = done
+    if todo is not None:
+      self._todo = todo
+    self._bar.update(self._build())
+
+  def __enter__(self):
+    self._bar.__enter__()
+    return self
+
+  def __exit__(self, *exc):
+    self._bar.__exit__(*exc)
+
+
+# Navigation sequences
+class NavigationSequence(CSICommand):
+  """A CSI command that moves the cursor or view when printed.
+
+  You can call instances of this class to get a modified version. For
+  example, to get a string that moves the cursor up by 50 lines,
+  instead of doing something like `up * 50`, which would produce this:
+  ```
+  '\x1b[1\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A'
+  ```
+  You can simply call `up(50)` to get `'\x1b[50A'`.
+  """
+
+  def __init__(self, char: str, n: int = 1):
+    super().__init__(f'{n}{char}')
     self._char = char
 
-  def __call__(self, n: int = 1, file=None, flush=False):
-    print(f'{CSI}{n}{self._char}', file=file, flush=flush, end='')
+  def __call__(self, n: int) -> str:
+    return f'{CSI}{n}{self._char}'
 
 
 up = NavigationSequence('A')
 """Moves the cursor up."""
 down = NavigationSequence('B')
 """Moves the cursor down."""
-right = NavigationSequence('C')
-"""Moves the cursor right."""
 left = NavigationSequence('D')
 """Moves the cursor left."""
-next_line = NavigationSequence('E')
-"""Moves the cursor to the next line."""
+right = NavigationSequence('C')
+"""Moves the cursor right."""
 prev_line = NavigationSequence('F')
 """Moves the cursor to the previous line."""
+next_line = NavigationSequence('E')
+"""Moves the cursor to the next line."""
 view_up = NavigationSequence('S')
 """Scrolls the view up."""
 view_down = NavigationSequence('T')
@@ -132,7 +303,7 @@ view_down = NavigationSequence('T')
 
 # Clear sequences
 class ClearSequence(CSICommand):
-  """A CSI command that clears some part of the screen."""
+  """A CSI command that clears some part of the screen when printed."""
 
   def __init__(self, char: str, n: int):
     super().__init__(f'{n}{char}')
@@ -156,13 +327,13 @@ clear_history = ClearSequence('J', 3)
 
 def clear_lines(n_lines: int, file=None, flush=False):
   """Clears the given number of lines."""
-  buff = up.join([clear_line] * n_lines)
+  buff = up.join([str(clear_line)] * n_lines)
   print(buff, end='', file=file, flush=flush)
 
 
 # SGR sequences
 class Style(collections.UserString):
-  """A CSI commands that selects the grahpic rendition (SGR).
+  """A CSI command that selects the grahpic rendition (SGR).
 
   Example usage:
   ```
@@ -198,7 +369,7 @@ class Style(collections.UserString):
 reset = Style(0, 0)
 """Resets any previously applied styles."""
 bold = Style(1, 22)
-"""Bolden the text."""
+"""Boldens the text."""
 dim = Style(2, 22)
 """Dims the text."""
 italic = Style(3, 23)
@@ -299,186 +470,3 @@ def rgb(r: int, g: int, b: int) -> Style:
 def on_rgb(r: int, g: int, b: int) -> Style:
   """Creates a background colour `Style` for given rgb values."""
   return Style(f'48;2;{r};{g};{b}', 49)
-
-
-def indent(string: str, prefix: str = '  ') -> str:
-  """Indents the given string using the given prefix."""
-  return prefix + string.replace('\n', '\n' + prefix)
-
-
-def to_columns(
-  items: list[str],
-  n_columns: int = 0,
-  column_sep: str = '  ',
-  prefix: str = '  ',
-) -> str:
-  """Arranges a list of strings in columns.
-
-  If `n_columns` is not set, it will be calculated based on the size
-  of the terminal.
-  """
-  items = [str(item) for item in items]
-  items_by_len = sorted(items, key=len, reverse=True)
-  n_items = len(items)
-  # Calculating n_columns
-  if not n_columns:
-    available_width = os.get_terminal_size()[0] - len(prefix)
-    n_columns = 1
-    for i in range(2, n_items + 2):
-      selected_items = items_by_len[:i]
-      text = column_sep.join(selected_items)
-      if len(text) > available_width:
-        n_columns = i - 1
-        break
-    else:
-      n_columns = n_items
-  # Making a list of columns, equalising string length in each column
-  # and adding a separator between columns
-  columns = [items[i::n_columns] for i in range(n_columns)]
-  for i, column in enumerate(columns[:n_columns - 1]):
-    column_width = len(max(column, key=len))
-    for j, item in enumerate(column):
-      columns[i][j] = item + ' ' * (column_width - len(item)) + column_sep
-  # Adding the prefix to the first column
-  for i, item in enumerate(columns[0] if columns else []):
-    columns[0][i] = prefix + item
-  # Combining into a string
-  n_rows = len(columns[0]) if columns else 0
-  lines = []
-  for i in range(n_rows):
-    line = []
-    for column in columns:
-      if i < len(column):
-        line.append(column[i])
-    line = ''.join(line)
-    lines.append(line)
-  return '\n'.join(lines)
-
-
-def eprint(*args, sep=' ', end='\n', flush=False):
-  """Prints to stderr."""
-  print(*args, sep=sep, end=end, flush=flush, file=sys.stderr)
-
-
-class StatusBar:
-  """A context manager that prints the `status` to stderr on on entry
-  and clears it on exit.
-
-  If the `status` message is bigger than the user's terminal, then only
-  a part of it will be printed, so that it fits cleanly onto one line
-  in the user's terminal, maintaining the appearance of a bar.
-
-  Example usage:
-  ```
-  with StatusBar('Configuring Foo...'):
-    configure_foo()
-  ```
-  """
-
-  def __init__(self, status: str):
-    self.status = status
-    self._printed = ''
-
-  def _build(self):
-    term_width = os.get_terminal_size()[0]
-    self._printed = self.status[:term_width]
-    return clear_page_from_cursor + self._printed
-
-  def _print(self, text: str):
-    eprint(text, end='\r', flush=True)
-
-  def update(self, status: str = None):
-    """Updates the status bar."""
-    if status is not None:
-      self.status = status
-    self._print(self._build())
-
-  def __enter__(self):
-    hide_input()
-    self._print(self._build() + hide_cursor)
-    return self
-
-  def __exit__(self, *exc):
-    self._print(clear_page_from_cursor + show_cursor)
-    show_input()
-
-
-class ProgressBar:
-  """A context manager that prints a progress bar to stderr on entry
-  and clears it on exit.
-
-  If the `status` message is bigger than the user's terminal, then only
-  a part of it will be printed, so that it fits cleanly onto one line
-  in the user's terminal, maintaining the appearance of a bar.
-
-  Example usage:
-  ```
-  with ProgressBar('Fooing 3 Bars', 0, 3) as bar:
-    for i in range(1, 4):
-      foo(bar)
-      bar.update(i)
-  ```
-  """
-
-  def __init__(
-    self,
-    status: str,
-    done: int = 0,
-    todo: int = 0,
-    symbols: str = '[= ]',
-  ):
-    self.status = status
-    self.symbols = symbols
-    self._done = done
-    self._todo = todo
-    self._bar = StatusBar(self._build())
-
-  def _build(self) -> str:
-    # Calculating the progress float
-    try:
-      progress_float = self._done / self._todo
-      progress_float = min(max(progress_float, 0), 1)
-    except ZeroDivisionError:
-      progress_float = 0
-    available_width = os.get_terminal_size()[0]
-    items = []
-    # Printing the status
-    items.append(self.status)
-    available_width -= len(self.status)
-    # Adding the percentage
-    if available_width >= 5:
-      percentage = str(int(progress_float * 100))
-      items.append(f' {percentage:>3}%')
-      available_width -= 5
-    # Adding the progress bar
-    if available_width >= 8:
-      bar_width = min(available_width - 3, 30)
-      filled = int(progress_float * bar_width)
-      empty = bar_width - filled
-      bar = (
-        ' '
-        + self.symbols[0]
-        + self.symbols[1] * filled
-        + self.symbols[2] * empty
-        + self.symbols[3]
-      )
-      items.append(bar)
-      available_width -= bar_width + 3
-    # Final formatting
-    items[0] += ' ' * available_width
-    return ''.join(items)
-
-  def update(self, done: int = None, todo: int = None):
-    """Updates the progress bar."""
-    if done is not None:
-      self._done = done
-    if todo is not None:
-      self._todo = todo
-    self._bar.update(self._build())
-
-  def __enter__(self):
-    self._bar.__enter__()
-    return self
-
-  def __exit__(self, *exc):
-    self._bar.__exit__(*exc)
