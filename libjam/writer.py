@@ -11,9 +11,28 @@ ESC = chr(0x1B)
 CSI = ESC + '['
 
 
-def eprint(*args, sep=' ', end='\n', flush=False):
-  """Prints to stderr."""
-  print(*args, sep=sep, end=end, flush=flush, file=sys.stderr)
+# Making more verbose print functions
+_print = print
+
+
+def print(text: str, flush: bool = False):
+  """Prints `text` to stdout, without a newline."""
+  _print(text, file=sys.stdout, end='', flush=flush)
+
+
+def println(text: str, flush: bool = False):
+  """Prints `text` to stdout, with a newline."""
+  _print(text, file=sys.stdout, end='\n', flush=flush)
+
+
+def eprint(text: str, flush: bool = False):
+  """Prints `text` to stderr, without a newline."""
+  _print(text, file=sys.stderr, end='', flush=flush)
+
+
+def eprintln(text: str, flush: bool = False):
+  """Prints `text` to stderr, with a newline."""
+  _print(text, file=sys.stderr, end='\n', flush=flush)
 
 
 def indent(string: str, prefix: str = '  ') -> str:
@@ -88,20 +107,23 @@ show_cursor = CSICommand('?25h')
 
 
 @contextlib.contextmanager
-def hidden_cursor(file=None, flush=False):
+def hidden_cursor(flush: bool = False):
   """A context manager that hides the cursor."""
   try:
-    print(hide_cursor, file=file, flush=flush)
+    eprint(hide_cursor, flush=flush)
     yield
   finally:
-    print(show_cursor, file=file, flush=flush)
+    eprint(show_cursor, flush=flush)
 
 
 try:
   import termios
 
   def hide_input():
-    """Hides what the user is typing."""
+    """Hides what the user is typing.
+
+    Only works on systems where termios is available.
+    """
     stdin_fileno = sys.stdin.fileno()
     attributes = termios.tcgetattr(stdin_fileno)
     attributes[3] &= ~termios.ECHO
@@ -109,7 +131,10 @@ try:
     termios.tcsetattr(stdin_fileno, termios.TCSANOW, attributes)
 
   def show_input():
-    """Reveals what the user is typing."""
+    """Reveals what the user is typing.
+
+    Only works on systems where termios is available.
+    """
     stdin_fileno = sys.stdin.fileno()
     attributes = termios.tcgetattr(stdin_fileno)
     attributes[3] |= termios.ECHO
@@ -118,11 +143,17 @@ try:
 
 except ModuleNotFoundError:
   def hide_input():
-    """Does nothing because `termios` is not installed."""
+    """Hides what the user is typing.
+
+    Only works on systems where termios is available.
+    """
     pass
 
   def show_input():
-    """Does nothing because `termios` is not installed."""
+    """Reveals what the user is typing.
+
+    Only works on systems where termios is available.
+    """
     pass
 
 
@@ -134,6 +165,30 @@ def hidden_input():
     yield
   finally:
     show_input()
+
+
+# Clear sequences
+class ClearSequence(CSICommand):
+  """A CSI command that clears some part of the screen when printed."""
+
+  def __init__(self, char: str, n: int):
+    super().__init__(f'{n}{char}')
+
+
+clear_line = ClearSequence('K', 2)
+"""Clears the whole line."""
+clear_line_from_cursor = ClearSequence('K', 0)
+"""Clears the line starting from the cursor."""
+clear_line_before_cursor = ClearSequence('K', 1)
+"""Clears the line up to the cursor."""
+clear_page = ClearSequence('J', 2)
+"""Clears the whole page."""
+clear_page_from_cursor = ClearSequence('J', 0)
+"""Clears the page starting from the cursor."""
+clear_page_before_cursor = ClearSequence('J', 1)
+"""Clears the page up to the cursor."""
+clear_history = ClearSequence('J', 3)
+"""Clears the scrollback buffer."""
 
 
 class StatusBar:
@@ -155,29 +210,24 @@ class StatusBar:
 
   def __init__(self, status: str):
     self.status = status
-    self._printed = ''
 
   def _build(self):
     term_width = os.get_terminal_size()[0]
-    self._printed = self.status[:term_width]
-    return clear_page_from_cursor + self._printed
-
-  def _print(self, text: str):
-    eprint(text, end='\r', flush=True)
+    return clear_page_from_cursor + self.status[:term_width] + '\r'
 
   def update(self, status: str = None):
     """Updates the status bar."""
     if status is not None:
       self.status = status
-    self._print(self._build())
+    eprint(self._build(), True)
 
   def __enter__(self):
     hide_input()
-    self._print(self._build() + hide_cursor)
+    eprint(hide_cursor + self._build(), True)
     return self
 
   def __exit__(self, *exc):
-    eprint(clear_page_from_cursor + show_cursor, end='')
+    eprint(clear_page_from_cursor + show_cursor, True)
     show_input()
 
 
@@ -272,7 +322,10 @@ class NavigationSequence(CSICommand):
   ```
   '\x1b[1\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A\x1b[1A'
   ```
-  You can simply call `up(50)` to get `'\x1b[50A'`.
+  You can simply call `up(50)` to get this:
+  ```
+  '\x1b[50A'
+  ```
   """
 
   def __init__(self, char: str, n: int = 1):
@@ -299,36 +352,6 @@ view_up = NavigationSequence('S')
 """Scrolls the view up."""
 view_down = NavigationSequence('T')
 """Scrolls the view down."""
-
-
-# Clear sequences
-class ClearSequence(CSICommand):
-  """A CSI command that clears some part of the screen when printed."""
-
-  def __init__(self, char: str, n: int):
-    super().__init__(f'{n}{char}')
-
-
-clear_line = ClearSequence('K', 2)
-"""Clears the whole line."""
-clear_line_from_cursor = ClearSequence('K', 0)
-"""Clears the line starting from the cursor."""
-clear_line_before_cursor = ClearSequence('K', 1)
-"""Clears the line up to the cursor."""
-clear_page = ClearSequence('J', 2)
-"""Clears the whole page."""
-clear_page_from_cursor = ClearSequence('J', 0)
-"""Clears the page starting from the cursor."""
-clear_page_before_cursor = ClearSequence('J', 1)
-"""Clears the page up to the cursor."""
-clear_history = ClearSequence('J', 3)
-"""Clears the scrollback buffer."""
-
-
-def clear_lines(n_lines: int, file=None, flush=False):
-  """Clears the given number of lines."""
-  buff = up.join([str(clear_line)] * n_lines)
-  print(buff, end='', file=file, flush=flush)
 
 
 # SGR sequences
